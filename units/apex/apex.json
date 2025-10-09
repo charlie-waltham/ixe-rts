@@ -1,0 +1,23 @@
+{
+	"type": "unit",
+	"displayname": "Factory Apex",
+	"permanentinventory": true,
+	"isapex": true,
+	"isportal": false,
+	"image": "body.png",
+	"position": [0, 0],
+	"pivot": [0.5, 0.5],
+	"maxammo": 500,
+	"movable": true,
+	"isbuilt": true,
+	"powergeneration": [0.01, 0.1, 3600],	
+	"powerdispatchstoremax": 1,
+	"parts": [
+				{"part": "$/weapon_cannon/weapon_cannon.json", "position": [18, -4]},
+				{"part": "$/weapon_sentrygun/weapon_sentrygun.json", "position": [10, -2.5]},
+				{"part": "$/weapon_lathe/weapon_lathe.json", "position": [-4, -1.5]}
+			 ],
+    "controllers": [
+        { "name": "ondestroy_sandexplosion" }
+    ]
+}

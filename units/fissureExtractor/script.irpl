@@ -1,0 +1,34 @@
+$fissure_id:-1
+
+Sys_Operable
+if (@Get("amount") lte0) return endif
+if (ReadConfig(self "extractorEnable") !) return endif
+
+if (GetAmmo(self) <cost >=)
+    if (ReadConfig(self "extractorBoost"))
+        SetUnitProperty(self "ammorequesttime" 3)
+        2 >consumptionRate
+    else
+        SetUnitProperty(self "ammorequesttime" 6)
+        1 >consumptionRate
+    endif
+
+    ConsumeAmmo(self <cost)
+    @Get("amount") <consumptionRate - @Set("amount")
+    <-*rts_materials{<resource} 1 + ->*rts_materials{<resource}
+endif
+
+:Awake
+    if (<fissure_id -1 !=)
+        @Get("extract_cost") >cost
+        @Get("resource") >resource
+    endif
+    1 >consumptionRate
+    WriteConfig(self "extractorEnable" true)
+
+:Get
+    <fissure_id swap GetScript1Var
+
+:Set
+    >var >val
+    SetScript1Var(<fissure_id <var <val)

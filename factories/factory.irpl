@@ -1,0 +1,64 @@
+$unit_type:"$/defender/defender"
+$max_units:3
+
+Sys_Operable
+
+if (GetAmmo(self) GetMaxAmmo(self) >=)
+    if (GetListCount(<units) <max_units <)
+        @ProduceUnit
+        SetAmmo(self 0)
+    endif
+endif
+
+if (GetGameUpdateCount 30 % eq0)
+    # Reverse order
+    -1 <units 1 - do
+        if (GetDestroyed(<units[i]))
+            RemoveListElement(<units i)
+        endif
+    loop
+endif
+
+:ProduceUnit
+    CreateUnit(<unit_type GetPosition(self) true) >unit
+    SetUnitProperty(<unit "movable" false)
+    EnableLos(<unit true)
+    SetLosRange(<unit 90)
+    SendMsg("ApplyUpgrades" self 1 - Concat <unit)
+
+    AppendToList(<units <unit)
+
+:Upgrade
+    <spentMaterials{31} <_DATA{"costOre"} + >spentMaterials{31}
+    <spentMaterials{32} <_DATA{"costRedon"} + >spentMaterials{32}
+    <spentMaterials{33} <_DATA{"costGreenar"} + >spentMaterials{33}
+    <spentMaterials{34} <_DATA{"costSpectrite"} + >spentMaterials{34}
+
+:Once
+    CreateList >units
+    0 List >ownedUpgrades
+
+    RegisterForMsg("Upgrade" self 1 - Concat "Upgrade")
+    GetTableKeys(<-*rts_materials) >keys
+    <keys 0 do
+        <keys[i] 0
+    loop
+    Table >spentMaterials
+
+    V4(1 1 1 1)
+    V4(0.7 1 0.7 1)
+    V4(0.6 0.7 1 1)
+    V4(0.8 0.5 1 1)
+    V4(1 0.5 0.5 1)
+    V4(1 0.7 0.3 1)
+    List >tierColours
+
+:Destroyed
+    <units 0 do
+        Destroy(<units[i] true)
+    loop
+
+    # Refund upgrades
+    <keys 0 do
+        <-*rts_materials{<keys[i]} <spentMaterials{<keys[i]} + ->*rts_materials{<keys[i]}
+    loop

@@ -1,0 +1,124 @@
+$CREEPER_CHUNK_SIZE:8
+$FRONTLINE_SIZE:8
+$DELAY:5
+
+if (GetTimer0 eq0)
+    @FindFrontlines
+    SetTimer0(<DELAY)
+endif
+
+:Once
+    <CREEPER_CHUNK_SIZE ->*CREEPER_CHUNK_SIZE
+    <CREEPER_CHUNK_SIZE dup * >sqrChunkSize
+    512 <CREEPER_CHUNK_SIZE / >numChunks
+    0 >currentRow
+    CreateList >sprites
+    <FRONTLINE_SIZE 0 do CreateList loop List ->*frontlineCells
+    false >debugFrontline
+    
+    V4(
+        -1 <CREEPER_CHUNK_SIZE * dup
+        <CREEPER_CHUNK_SIZE dup
+    ) >areaScaler
+
+    256 0 do
+        if (GetSandDefData(i){"blocksUnits"}) i endif
+    loop
+    List >blockingSands
+
+    GetUnitsByName("/rts/dummy") >dummies
+    <dummies 0 do Destroy(<dummies[i] false) loop
+
+    Magnitude(V2(<CREEPER_CHUNK_SIZE <FRONTLINE_SIZE * dup)) >losRange
+    <numChunks 0 do
+        V2(0 i <CREEPER_CHUNK_SIZE *) <CREEPER_CHUNK_SIZE 2 / + >unitPos
+        CreateUnit("/rts/dummy" <unitPos true) >unit
+        SetLosRange(<unit <losRange)
+        EnableLos(<unit true)
+        <unit
+    loop
+    List >losUnits
+
+    RegisterForMsg("DebugFrontline" dup)
+    
+    SetTimer0(<DELAY)
+    SetTimerObeyPause0(true)
+
+    RegisterScript("frontline")
+
+:FindFrontlines
+    # Delete any previous frontline cells from this row
+    <-*frontlineCells 0 do
+        # Iterate through cells in reverse order to allow removing elements without index shifting
+        -1 <-*frontlineCells[i] 1 - do
+            <-*frontlineCells[j][i] >currentCell
+            if (<currentCell.x <currentRow <CREEPER_CHUNK_SIZE * ==)
+                RemoveListElement(<-*frontlineCells[j] i)
+            endif
+        loop
+    loop
+
+    if (<currentRow eq0)
+        <sprites 0 do DestroySprite(<sprites[i]) loop
+    endif
+
+    <numChunks 0 do
+        GetNearestCreeper(<losUnits[i] false) >nearestCreeper
+        GetLos(<losUnits[i] <nearestCreeper.x <nearestCreeper.y) >los
+        # Update position of los dummy now as position takes a frame to update
+        SetPosition(<losUnits[i] V2(<currentRow 1 + i) <CREEPER_CHUNK_SIZE * <CREEPER_CHUNK_SIZE 2 / +)
+
+        if (<los)
+            # Gets the area of the chunk, equal to (x, y) * chunkSize, (x,y) * chunkSize + chunkSize
+            V4(
+                <currentRow <CREEPER_CHUNK_SIZE * i <CREEPER_CHUNK_SIZE *
+                dup2 <CREEPER_CHUNK_SIZE + swap <CREEPER_CHUNK_SIZE + swap
+            ) >area
+            
+            # Check if this cell is a valid frontline, and return a value for its distance from the creeper
+            0 >distance
+            if (GetSandInArea(<area false <blockingSands true) GetListCount <sqrChunkSize lt # Cell is not 100% sand
+                GetCreeperInArea(<area false false) eq0 &&) # Creeper in cell is 0
+
+                <FRONTLINE_SIZE 1 + 1 do
+                    # Creeper in cells around this cell is not 0
+                    if (GetCreeperInArea(<area <areaScaler i * + false false) gt0)
+                        i >distance
+                        break
+                    endif
+                loop
+            endif
+
+            if (<distance neq0)
+                # frontlineCells has a list for each cell distance.
+                # This is so units can be prioritised to be close to the creeper.
+                AppendToList(<-*frontlineCells[<distance 1 -] V2(<area.x <area.y))
+
+                if (<debugFrontline)
+                    @DebugSprite("/rts/images/square.png" 
+                        Vector0
+                        <area
+                        V2(<CREEPER_CHUNK_SIZE 2 * dup)
+                        V4(0 0 1 <distance 1 - <FRONTLINE_SIZE asfloat / - 0.5)
+                    ) >sprite
+                    AppendToList(<sprites <sprite)
+                endif
+            endif
+        endif
+    loop
+
+    # Increment row or loop back to 0
+    <currentRow 1 + <numChunks mod >currentRow
+
+:DebugSprite
+    # @DebugSprite(<image <origin <position <scale <color) >sprite
+
+    >color >scale >position >origin >image
+    CreateSprite(<image <origin) >sprite
+    SetSpriteScale(<sprite <scale)
+    SetSpriteColor(<sprite <color)
+    SetSpritePosition(<sprite <position false)
+    <sprite
+
+:DebugFrontline
+    <_DATA{"data"}{"frontlineToggle"} >debugFrontline

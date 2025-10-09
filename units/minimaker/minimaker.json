@@ -1,0 +1,18 @@
+{
+	"type": "unit",
+	"displayname": "MiniMaker",
+	"permanentinventory": true,
+	"image": "body.png",
+	"position": [0, 0],
+	"pivot": [0.5, 0.5],
+	"maxcammo": 2000,
+	"movable": true,
+	"parts": [
+				{"part": "$/weapon_maker/weapon_maker.json", "position": [-2.5, 2]},
+				{"part": "$/weapon_maker/weapon_maker.json", "position": [-2.9, -3]},
+				{"part": "$/weapon_maker/weapon_maker.json", "position": [4, -3.5]}
+			 ],
+	"controllers": 	[
+						{"name": "ondestroy_sandexplosion"}
+					]
+}

@@ -1,0 +1,14 @@
+{
+    "type": "global",
+    "scripts": [
+        {"name": "frontline.irpl", "run_when_paused": true},
+        {"name": "unitcontrol.irpl", "run_when_paused": true},
+        {"name": "main.irpl", "run_when_paused": true},
+        {"name": "ui/factory.irpl", "run_when_paused": true},
+        {"name": "ui/info.irpl", "run_when_paused": true},
+        {"name": "ui/forge.irpl", "run_when_paused": true},
+        {"name": "ui/help.irpl", "run_when_paused": true},
+        {"name": "ui/editor.irpl", "run_when_paused": true},
+        {"name": "ui/fissure.irpl", "run_when_paused": true}
+    ]
+}

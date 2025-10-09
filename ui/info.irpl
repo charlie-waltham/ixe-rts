@@ -1,0 +1,69 @@
+@UpdateInfoUI
+
+:GameLoaded
+    false >buildUIOpen
+    false >helpUIOpen
+    @CreateInfoUI
+
+:Once
+    RegisterForMsg("CreateInfoUI" dup)
+    RegisterForMsg("ToggleBuildUI" dup)
+    RegisterForMsg("ToggleHelpUI" dup)
+
+    false >buildUIOpen
+    false >helpUIOpen
+    @CreateInfoUI
+
+:UpdateInfoUI
+    @FormatAmount(<-*rts_materials{31}) >uiData{"ore"}
+    @FormatAmount(<-*rts_materials{32}) >uiData{"redon"}
+    @FormatAmount(<-*rts_materials{33}) >uiData{"greenar"}
+    @FormatAmount(<-*rts_materials{34}) >uiData{"spectrite"}
+
+    "spectrite" >uiData{"help"}
+
+:FormatAmount
+    # @FormatAmount(<amt)
+    # Formats a number such that values >=1000 are converted to K values.
+
+    dup 1000 >= if
+        1000.0 / 1 round "K" Concat
+    endif
+
+:ToggleBuildUI
+    <buildUIOpen ! >buildUIOpen
+    if (<buildUIOpen)
+        SetUIBackgroundColor("info" "build" V4(0.533 0.067 0.067 1))
+    else
+        SetUIBackgroundColor("info" "build" V4(0.071 0.231 0.31 1))
+    endif
+
+:ToggleHelpUI
+    <helpUIOpen ! >helpUIOpen
+    if (<helpUIOpen)
+        SetUIBackgroundColor("info" "help" V4(0.533 0.067 0.067 1))
+    else
+        SetUIBackgroundColor("info" "help" V4(0.071 0.231 0.31 1))
+    endif
+
+:CreateInfoUI
+    DestroyUI("info")
+
+    "{
+        'anchor': [0.5,1], 'pos': [132,-52], 'pivot': [0.5, 0.5], 'width': 260, 'height': 24, 'bgcolor': '#0000', 'Components': [
+        { 'type': 'image', 'pos': [90,0], 'width': 24, 'height': 24, 'name': 'oreIcon', 'color': '#fff', 'bgcolor': '#000', 'image': '/rts/images/icons/ore.png', 'tooltip': 'Ore'},
+        { 'type': 'text', 'pos': [120,0], 'width': 120, 'height': 24, 'name': 'ore', 'color': '#fff', 'bgcolor': '#123B4F00', 'text': '0'},
+        { 'type': 'image', 'pos': [190,0], 'width': 24, 'height': 24, 'name': 'redonIcon', 'color': '#fff', 'bgcolor': '#000', 'image': '/rts/images/icons/redon.png', 'tooltip': 'Redon'},
+        { 'type': 'text', 'pos': [220,0], 'width': 120, 'height': 24, 'name': 'redon', 'color': '#fff', 'bgcolor': '#123B4F00', 'text': '0'},
+        { 'type': 'image', 'pos': [90,-24], 'width': 24, 'height': 24, 'name': 'greenarIcon', 'color': '#fff', 'bgcolor': '#000', 'image': '/rts/images/icons/greenar.png', 'tooltip': 'Greenar'},
+        { 'type': 'text', 'pos': [120,-24], 'width': 120, 'height': 24, 'name': 'greenar', 'color': '#fff', 'bgcolor': '#123B4F00', 'text': '0'},
+        { 'type': 'image', 'pos': [190,-24], 'width': 24, 'height': 24, 'name': 'spectriteIcon', 'color': '#fff', 'bgcolor': '#000', 'image': '/rts/images/icons/spectrite.png', 'tooltip': 'Spectrite'},
+        { 'type': 'text', 'pos': [220,-24], 'width': 120, 'height': 24, 'name': 'spectrite', 'color': '#fff', 'bgcolor': '#123B4F00', 'text': '0'},
+        { 'type': 'button', 'pos': [0,0], 'width': 90, 'height': 28, 'name': 'build', 'color': '#fff', 'bgcolor': '#123B4FFF', 'text': 'FORGE', 'events': ['ToggleBuildUI'], 'tooltip': 'Toggles the Forge screen.'},
+        { 'type': 'button', 'pos': [0,-28], 'width': 90, 'height': 28, 'name': 'help', 'color': '#fff', 'bgcolor': '#123B4FFF', 'text': 'HELP', 'events': ['ToggleHelpUI'], 'tooltip': 'Toggles the Help screen.'},
+        { 'type': 'button', 'pos': [0,-56], 'width': 90, 'height': 28, 'name': 'reset', 'color': '#fff', 'bgcolor': '#811', 'text': 'RESET', 'events': ['ResetShips'], 'tooltip': 'Forces all ships to reposition. Useful in case of emergency.'},
+        ]
+    }" >json
+
+    CreateTable >uiData
+    CreateUI("info" <json <uiData) pop pop

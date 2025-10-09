@@ -1,0 +1,18 @@
+{
+	"type": "part",
+	"position": [0, 0],
+	"pivot": [0.5, 0.5],
+	"configui": {
+		"title": {
+			"name": "fissure_title",
+			"text": "Fissure",
+			"textalignment": "Center",
+			"bgcolor": "#CFB161FF",
+			"tooltip": "Fissure"
+		},
+		"width": 200,
+		"Components": [
+			{ "type": "button", "pos": [4,16], "width": 192, "name": "buildExtractor", "text": "BUILD EXTRACTOR", "events": ["BuildExtractor"]}
+		]
+	}
+}

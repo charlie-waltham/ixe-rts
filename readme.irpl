@@ -1,0 +1,26 @@
+# There are a few things you should know if making a map for this gamemode.
+#
+# First, it is necessary to have sands defined for the resources in the following slots:
+# 31 - Ore
+# 32 - Redon
+# 33 - Greenar
+# 34 - Spectrite
+# This is so fissures can pick the correct colour for their designated resource. You can use the export JSON
+# option in the sand interactions panel to export the sand definitions of an existing map.
+#
+# Second, making fissures requires you to edit variables using the in-game variable editor. You can do this
+# by selecting the unit in the editor, clicking on the button under "scripts" and modifying the values
+# highlighted in green. The resource is defined using the values 31-34 as stated previously.
+#
+# Third, be careful with particulate as the ship placement logic is blind to it. Part emitters should only
+# exist in places which have creeper.
+#
+#
+# If you wish to add new factories / change existing upgrades, you should start with one of the existing
+# factories as a template. Their config is poorly documented and still not in a finished state (sorry),
+# so if you need help understanding how to make upgrades feel free to message me (Up-Level) on Discord.
+#
+# Any new ships must have definitions in unitcontrol.irpl for their rectangular size, and if they are to
+# be controlled by the frontline system they must also have a "maxDistance" set. maxDistance is the
+# maximum number of frontline cells a ship will try to place itself away from the creeper. Frontline
+# cells can be seen by checking "Show Frontlines" in the RTS editor UI.

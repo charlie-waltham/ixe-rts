@@ -1,0 +1,102 @@
+$resource:31
+$amount:500
+$extract_cost:0.5
+$erupt_delay:60
+
+if (GetTimer0 eq0)
+    GetPosition(self) >pos
+
+    if (<amount lte0)
+        SetColor(self V4(0.4 0.4 0.4 1))
+        return
+    endif
+
+    CreateSandExplosion(
+        <pos.x <pos.y 2 +
+        0.5 1
+        50
+        <sandDef{"color"} <sandDef{"color2"}
+        30 90
+        255 0 0 0
+    )
+
+    SetTimer0(<erupt_delay)
+endif
+
+:BuildExtractor
+    # No way to make a config UI button event affect only the relevant unit, so this is close enough
+    if (ListContains(GetSelectedUnits self 1 -) !) return endif
+
+    GetPosition(self) >pos
+
+    # If extractor not present
+    if (GetUnitsInRange(<pos.x <pos.y 8 <extractor) GetListCount eq0)
+        CreateUnit(<extractor[0] <pos V2(0 4) + false) >unit
+        SetScript1Var(<unit "fissure_id" self)
+        SetScript1Var(<unit "cost" <extract_cost)
+        SetScript1Var(<unit "resource" <resource)
+    endif
+
+:FrameAdvance
+    if (GetGameTickCount 10 % neq0) return endif
+
+    GetMouseCell >mousePos
+    @GetRectVertices(<pos <size) >rect
+
+    if (@IsOverlapping(<mousePos <rect))
+        if (<overlapping !)
+            SendMsg("CreateFissureUI" self)
+            true >overlapping
+        endif
+    else
+        if (<overlapping)
+            SendMsg("DestroyFissureUI" null)
+            false >overlapping
+        endif
+    endif
+
+    if (GetEditMode)
+        # We want to update fissure colour automatically if editor is open in case it's changed
+        GetSandDefData(<resource) >sandDef
+        SetColor(self <sandDef{"color"})
+    endif
+
+:Awake
+    RegisterForMsg("MSG_FrameAdvance" "FrameAdvance")
+    RegisterForMsg("BuildExtractor" dup)
+
+    GetPosition(self) >pos
+    V2(11 5) >size
+    "/rts/units/fissureExtractor/fissureExtractor" 1 ListN >extractor
+
+    GetSandDefData(<resource) >sandDef
+    SetColor(self <sandDef{"color"})
+
+    SetTimer0(<erupt_delay)
+
+:Once
+    if (GetEditMode)
+        @Awake
+    endif
+
+:Destroyed
+    SendMsg("DestroyFissureUI" null)
+
+:IsOverlapping
+    # @IsOverlapping(<point <rect) >isOverlapping
+    >rect2 >rect1
+
+    <rect1.0 <rect2.0 <
+    <rect1.0 <rect2.2 > ||
+    <rect1.1 <rect2.1 < ||
+    <rect1.1 <rect2.3 > || !
+
+:GetRectVertices
+    # @GetRectVertices(<centrePos <scale) >vertices
+    >rectScale >rectPos
+
+    <rectScale 2 / >rect2
+    V4(
+        <rectPos <rect2 - EV2
+        <rectPos <rect2 + EV2
+    )

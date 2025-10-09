@@ -1,0 +1,21 @@
+{
+	"type": "part",
+	"position": [0, 0],
+	"pivot": [0.5, 0.5],
+	"configui": {
+		"title": {
+			"name": "fissure_title",
+			"text": "Fissure Extractor",
+			"textalignment": "Center",
+			"bgcolor": "#CFB161FF",
+			"tooltip": "Fissure Extractor"
+		},
+		"width": 200,
+		"Components": [
+			{ "type":"text", "pos": [4,30], "text": "ON" },
+			{ "type":"toggle", "pos": [32,30], "name":"extractorEnable", "tooltip": "ON/OFF" },
+			{ "type":"text", "pos": [66,30], "text": "BOOST" },
+			{ "type":"toggle", "pos": [135,30], "name":"extractorBoost", "tooltip": "X2 Extraction Rate<br>X2 Consumption / Resource" }
+		]
+	}
+}

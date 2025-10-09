@@ -1,0 +1,112 @@
+:Once
+    RegisterForMsg("BuildShip" dup)
+
+    31 0 # ore
+    32 0 # redon
+    33 0 # greenar
+    34 0 # spectrite
+    4 TableN ->*rts_materials
+
+    RegisterScript("main")
+
+    "reactor"
+        "name" "Reactor"
+        "tooltip" "Reactor"
+        "image" "/rts/images/forge/reactor.png"
+        "ship" "$/reactor/reactor"
+        "costOre" 100
+        "costRedon" 0
+        "costGreenar" 125
+        "costSpectrite" 0
+        8 TableN
+    "oreMiner"
+        "name" "Ore Miner"
+        "tooltip" "Ore Miner"
+        "image" "$/oreminer/body.png"
+        "ship" "$/oreminer/oreminer"
+        "costOre" 100
+        "costRedon" 0
+        "costGreenar" 25
+        "costSpectrite" 0
+        8 TableN
+    "cryon"
+        "name" "Cryon"
+        "tooltip" "Cryon"
+        "image" "/rts/images/forge/cryon.png"
+        "ship" "$/cryon/cryon"
+        "costOre" 500
+        "costRedon" 50
+        "costGreenar" 0
+        "costSpectrite" 50
+        8 TableN
+    "defenderFactory"
+        "name" "Defender Factory"
+        "tooltip" "A factory that produces Defenders. Default 3 units."
+        "image" "/rts/images/forge/defenderFactory.png"
+        "ship" "/rts/factories/defender/defender"
+        "costOre" 500
+        "costRedon" 100
+        "costGreenar" 0
+        "costSpectrite" 0
+        8 TableN
+    "gunshipFactory"
+        "name" "Gunship Factory"
+        "tooltip" "A factory that produces Gunships. Default 2 units."
+        "image" "/rts/images/forge/gunshipFactory.png"
+        "ship" "/rts/factories/gunship/gunship"
+        "costOre" 700
+        "costRedon" 200
+        "costGreenar" 0
+        "costSpectrite" 0
+        8 TableN
+    "frigateFactory"
+        "name" "Frigate Factory"
+        "tooltip" "A factory that produces Frigates. Default 1 unit."
+        "image" "/rts/images/forge/frigateFactory.png"
+        "ship" "/rts/factories/frigate/frigate"
+        "costOre" 800
+        "costRedon" 200
+        "costGreenar" 0
+        "costSpectrite" 0
+        8 TableN
+    "partFactory"
+        "name" "Part Ship Factory"
+        "tooltip" "A factory that produces Part Ships. Default 2 units."
+        "image" "/rts/images/forge/partshipFactory.png"
+        "ship" "/rts/factories/partship/partship"
+        "costOre" 400
+        "costRedon" 150
+        "costGreenar" 0
+        "costSpectrite" 0
+        8 TableN
+    "minimakerFactory"
+        "name" "Mini Maker Factory"
+        "tooltip" "A factory that produces Mini Makers, a smaller maker with three AC weapons. Default 2 units."
+        "image" "/rts/images/forge/minimakerFactory.png"
+        "ship" "/rts/factories/minimaker/minimaker"
+        "costOre" 400
+        "costRedon" 200
+        "costGreenar" 0
+        "costSpectrite" 0
+        8 TableN
+    Table ->*rts_buildOptions
+
+:BuildShip
+    <-*rts_buildOptions{<_DATA{"name"}} >ship
+
+    if (
+        <-*rts_materials{31} <ship{"costOre"} >=
+        <-*rts_materials{32} <ship{"costRedon"} >= &&
+        <-*rts_materials{33} <ship{"costGreenar"} >= &&
+        <-*rts_materials{34} <ship{"costSpectrite"} >= &&
+    )
+        <-*rts_materials{31} <ship{"costOre"} - ->*rts_materials{31}
+        <-*rts_materials{32} <ship{"costRedon"} - ->*rts_materials{32}
+        <-*rts_materials{33} <ship{"costGreenar"} - ->*rts_materials{33}
+        <-*rts_materials{34} <ship{"costSpectrite"} - ->*rts_materials{34}
+
+        AddPlanToInventory(<ship{"ship"} 1 -1)
+        PlaySound("Achievement" 1)
+    else
+        PlaySound("UIClickError" 1)
+    endif

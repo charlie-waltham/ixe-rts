@@ -1,0 +1,102 @@
+$RESOURCE_COUNT_DELAY:120
+
+if (GetEditMode)
+    once
+        @CreateEditorUI
+        true >editMode # GetEditMode always returns false when inside GameLoaded
+    endonce
+
+    if (GetTimer0 eq0)
+        GetUnitsByName("/rts/units/fissure/fissure") >fissures
+        31 0 32 0 33 0 34 0 4 TableN >resources
+        <fissures 0 do
+            GetScript1Var(<fissures[i] "resource") >resource
+            <resources{<resource} GetScript1Var(<fissures[i] "amount") + >resources{<resource}
+        loop
+
+        <resources{31} @Fmt " ORE<br>" <resources{32} @Fmt " REDON<br>" <resources{33} @Fmt " GREENAR<br>" <resources{34} @Fmt " SPECTRITE"
+        @ConcatAll >uiTable{"resourceCounter"}
+
+        SetTimer0(<RESOURCE_COUNT_DELAY)
+    endif
+endif
+
+:CreateEditorUI
+    DestroyUI("editor")
+
+    "{
+        'anchor': [0,0], 'pos': [0,0], 'pivot': [0,0], 'width': 320, 'height': 256, 'bgcolor': '#dddddd', 'Components': [
+            { 'type': 'button', 'pos': [0,232], 'width': 320, 'height': 24, 'name': 'title', 'bgcolor': '#0000', 'text': 'RTS EDITOR'},
+            { 'type': 'button', 'pos': [296,232], 'width': 24, 'height': 24, 'name': 'minimise', 'bgcolor': '#ccc', 'text': '-', 'tooltip': 'Minimise', 'events': ['ToggleEditorUI']},
+            { 'type': 'text', 'pos': [32,208], 'width': 24, 'height': 24, 'name': 'frontlineLabel', 'text': 'SHOW FRONTLINES'},
+            { 'type': 'toggle', 'pos': [4,208], 'width': 24, 'height': 24, 'name': 'frontlineToggle', 'events': ['DebugFrontline']},
+            { 'type': 'text', 'pos': [32,184], 'width': 24, 'height': 24, 'name': 'placementLabel', 'text': 'SHOW FAILED PLACEMENTS'},
+            { 'type': 'toggle', 'pos': [4,184], 'width': 24, 'height': 24, 'name': 'placementToggle', 'events': ['DebugPlacements']},
+            { 'type': 'text', 'pos': [32,160], 'width': 24, 'height': 24, 'name': 'infLabel', 'text': 'INFINITE RESOURCES'},
+            { 'type': 'toggle', 'pos': [4,160], 'width': 24, 'height': 24, 'name': 'infToggle', 'events': ['InfiniteResources']},
+            { 'type': 'text', 'pos': [4,126], 'width': 310, 'height': 24, 'name': 'resourcesTitle', 'color': '#fff', 'bgcolor': '#8c7059', 'text': 'MAP RESOURCES'},
+            { 'type': 'text', 'pos': [4,70], 'width': 256, 'height': 24, 'name': 'resourceCounter'},
+        ]
+    }
+    " >ui
+    CreateTable >uiTable
+
+    CreateUI("editor" <ui <uiTable) pop pop
+
+:CreateEditorToggleUI
+    DestroyUI("editorToggle")
+
+    "{
+        'anchor': [0,0], 'pos': [0,0], 'pivot': [0,0], 'width': 24, 'height': 24, 'bgcolor': '#0000', 'Components': [
+            { 'type': 'button', 'pos': [296,0], 'width': 24, 'height': 24, 'name': 'maximise', 'bgcolor': '#ccc', 'text': '+', 'tooltip': 'Maximise', 'events': ['ToggleEditorUI']},
+        ]
+    }
+    " >ui
+
+    CreateUI("editor" <ui NULL) pop pop
+
+:ToggleEditorUI
+    <uiOpen ! >uiOpen
+
+    if (<uiOpen)
+        DestroyUI("editorToggle")
+        @CreateEditorUI
+    else
+        DestroyUI("editor")
+        @CreateEditorToggleUI
+    endif
+
+:InfiniteResources
+    if(<_DATA{"data"}{"infToggle"})
+        30 34 do
+            999000 ->*rts_materials{i}
+        loop
+    endif
+
+:ConcatAll
+    StackSize 1 do
+        Concat
+    loop
+
+:Fmt
+    # @FormatAmount(<amt)
+    # Formats a number such that values >=1000 are converted to K values.
+
+    dup 1000 >= if
+        1000.0 / 1 round "K" Concat
+    endif
+
+:Once
+    RegisterForMsg("InfiniteResources" dup)
+    RegisterForMsg("ToggleEditorUI" dup)
+
+    true >uiOpen
+    false >editMode
+
+    SetTimerObeyPause0(false)
+
+:GameLoaded
+    if (<editMode)
+        @CreateEditorUI
+        true >uiOpen
+    endif

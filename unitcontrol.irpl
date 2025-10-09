@@ -1,0 +1,266 @@
+$MAX_DELAY:10
+$ATTEMPTS_PER_DIST:5
+$MOVE_FURTHEST_INTERVAL:30
+$RESET_DURATION:90
+$UPGRADE_RANGE_THRESHOLD:3
+
+if (<apexFound !)
+    if (GetApex -1 !=)
+        EnableRa(GetApex true)
+        SetRaRange(GetApex 1024)
+        true >apexFound
+    else
+        return
+    endif
+endif
+
+if (GetTimer0 eq0)
+    if (GetApex -1 ==) false >apexFound endif
+
+    if (GetUpgradeBoost <UPGRADE_RANGE_THRESHOLD >)
+        once
+            GetTableKeys(<ugpradedShipData) >keys
+            <keys 0 do
+                <ugpradedShipData{<keys[i]} >shipData{<keys[i]}
+            loop
+        endonce
+    endif
+
+    @MoveUnits
+    SetTimer0(<MAX_DELAY GetListCount(<units) 0.1 * - 1 max)
+endif
+
+if (GetTimer1 eq0)
+    false >reset
+endif
+
+:Once
+    # Frontline ships
+    "$/defender/defender"               "scale" V2(10 8)  "maxDistance" 3 2 TableN
+    "$/gunship/gunship"                 "scale" V2(16 11) "maxDistance" 5 2 TableN
+    "$/frigate/frigate"                 "scale" V2(34 14) "maxDistance" 5 2 TableN
+    "$/cryon/cryon"                     "scale" V2(16 12) "maxDistance" 3 2 TableN # Not actually controlled for now
+    "$/particulateship/particulateship" "scale" V2(12 10) "maxDistance" 3 2 TableN
+    "/rts/units/minimaker/minimaker"    "scale" V2(16 14) "maxDistance" 3 2 TableN
+    # Uncontrolled ships (PITA!!!!)
+    "$/apexship/ship" "scale" V2(44 16) 1 TableN
+    "$/apexabraxis/apexabraxis" "scale" V2(44 16) 1 TableN # Not the same as normal apex but close enough
+    "/rts/units/apex/apex" "scale" V2(44 20) 1 TableN
+    "$/digger/digger" "scale" V2(12 12) 1 TableN
+    "$/reactor/reactor" "scale" V2(10, 10) 1 TableN
+    "$/duster/duster" "scale" V2(12, 10) 1 TableN
+    "$/oreminer/oreminer" "scale" V2(8, 8) 1 TableN
+    "$/nullifier/nullifier" "scale" V2(12 12) 1 TableN
+    "/rts/units/excavator/excavator" "scale" V2(12 12) 1 TableN
+    "$/coilship/coilship" "scale" V2(18 12) 1 TableN
+    "$/ixecore/ixecore" "scale" V2(12 12) 1 TableN
+    "$/spiritship/spiritship" "scale" V2(32 24) 1 TableN
+    "$/portal/portal" "scale" V2(8 8) 1 TableN
+    Table >shipData
+
+    # To be used when the amount of collected upgrade gems is above a threshold (increased range)
+    "$/defender/defender"               "scale" V2(10 8)  "maxDistance" 5 2 TableN
+    "$/gunship/gunship"                 "scale" V2(16 11) "maxDistance" 7 2 TableN
+    "$/frigate/frigate"                 "scale" V2(34 14) "maxDistance" 7 2 TableN
+    "$/cryon/cryon"                     "scale" V2(16 12) "maxDistance" 5 2 TableN # Not actually controlled for now
+    "$/particulateship/particulateship" "scale" V2(12 10) "maxDistance" 5 2 TableN
+    "/rts/units/minimaker/minimaker"    "scale" V2(16 14) "maxDistance" 5 2 TableN
+    Table >ugpradedShipData
+
+    GetTableKeys(<shipData) >allShips
+    "$/defender/defender" "$/gunship/gunship" "$/frigate/frigate" "$/particulateship/particulateship" "/rts/units/minimaker/minimaker" List >frontlineShips
+
+    RegisterForMsg("ResetShips" dup)
+    RegisterForMsg("DebugPlacements" dup)
+
+    256 0 do
+        if (GetSandDefData(i){"blocksUnits"}) i endif
+    loop
+    List >blockingSands
+
+    false >invalidPath
+    false >apexFound
+    false >reset
+    false >debugPlacements
+    0 >count
+    CreateList >sprites
+
+    SetTimer0(<MAX_DELAY)
+    SetTimerObeyPause0(true)
+    SetTimerObeyPause1(true)
+
+    RegisterScript("unitcontrol")
+
+:GameLoaded
+    false >apexFound
+
+:MoveUnits
+    <sprites 0 do
+        DestroySprite(<sprites[i])
+    loop
+
+    GetUnitsInRange(256 256 512 <allShips) >allUnits
+
+    <allUnits 0 do
+        @GetRectVertices(
+            GetPosition(<allUnits[i])
+            <shipData{GetName(<allUnits[i])}{"scale"}
+        )
+    loop
+    List >unitRects
+
+    GetUnitsInRange(256 256 512 <frontlineShips) >units
+    CreateList >unassignedUnits
+
+    <units 0 do
+        GetPosition(<units[i]) >pos
+        <shipData{GetName(<units[i])} >ship
+        V2 (
+            <pos.x dup <-*CREEPER_CHUNK_SIZE mod -
+            <pos.y dup <-*CREEPER_CHUNK_SIZE mod -
+        ) >currentCell
+
+        GetRaPath(GetApex <pos) >path
+        false >invalidPath
+        <path 0 do
+            <path[i] >pathPos
+            if (GetCreeper(<pathPos.x <pathPos.y) gt0)
+                true >invalidPath
+                break
+            endif
+        loop
+
+        if (<invalidPath)
+            AppendToList(<unassignedUnits <units[i])
+        else
+            false >isOnFrontline
+            <ship{"maxDistance"} 1 + 0 do
+                if (ListContains(<-*frontlineCells[i] <currentCell))
+                    true >isOnFrontline
+                endif
+            loop
+
+            if (<isOnFrontline !)
+                AppendToList(<unassignedUnits <units[i])
+            endif
+        endif
+    loop
+
+    -1 >unit
+    if (GetListCount(<unassignedUnits) neq0)
+        <unassignedUnits[RandInt(0 <unassignedUnits)] >unit
+    else
+        <count 1 + >count
+        if (<count <MOVE_FURTHEST_INTERVAL > <reset ||)
+            0 >count
+            10 0 do
+                <units[RandInt(0 <units)] >potentialUnit
+                GetPixelCount(<potentialUnit) >pixelCount
+                if (<pixelCount.2 eq0)
+                    <potentialUnit >unit
+                    break
+                endif
+            loop
+        endif
+    endif
+
+    if (<unit -1 eq) return endif
+
+    GetName(<unit) >unitName
+    <shipData{<unitName} >ship
+    <ship{"scale"} 2 / >shipR
+    false >locationFound
+
+    <ship{"maxDistance"} 1 + 0 do
+        <-*frontlineCells[i] >currentFrontline
+
+        <ATTEMPTS_PER_DIST 0 do
+            RandInt(0 GetListCount(<currentFrontline)) >cellId
+            RandInt(0 <-*CREEPER_CHUNK_SIZE) RandInt(0 <-*CREEPER_CHUNK_SIZE) V2 >innerPos
+            <currentFrontline[<cellId] <innerPos + >newPos
+
+            if (@IsValidPosition(<newPos <ship <unitRects))
+                MoveUnit(<unit <newPos)
+                true >locationFound
+                break
+            endif
+
+            if (<debugPlacements)
+                @GetRectVertices(<newPos <ship{"scale"}) >rect
+                @DebugSprite("/rts/images/square.png"
+                    Vector0
+                    <rect
+                    <ship{"scale"} 2 *
+                    V4(1 0 0 0.5)
+                ) >sprite
+                AppendToList(<sprites <sprite)
+            endif
+        loop
+
+        if (<locationFound)
+            break
+        endif
+    loop
+
+:IsValidPosition
+    # @IsValidPosition(<pos <ship <unitRects) >isValid
+    >unitRects >ship >pos
+
+    GetRaPath(GetApex <pos) >path
+    if (GetListCount(<path) eq0) false return endif
+
+    <path 0 do
+        <path[i] >pathPos
+        if (GetCreeper(<pathPos.x <pathPos.y) gt0)
+            false return
+        endif
+    loop
+
+    @GetRectVertices(<pos <ship{"scale"}) >newRect
+    <unitRects 0 do
+        if (<newRect <unitRects[i] !=)
+            if (@IsOverlapping(<newRect <unitRects[i]))
+                false return
+            endif
+        endif
+    loop
+
+    GetSandInArea(<newRect false <blockingSands true) GetListCount >sandCount
+    if (<sandCount neq0) false return endif
+
+    true return
+
+:IsOverlapping
+    # @IsOverlapping(<rect1 <rect2) >isOverlapping
+    >rect2 >rect1
+
+    <rect1.2 <rect2.0 <
+    <rect1.0 <rect2.2 > ||
+    <rect1.3 <rect2.1 < ||
+    <rect1.1 <rect2.3 > || !
+
+:GetRectVertices
+    # @GetRectVertices(<centrePos <scale) >vertices
+    >rectScale >rectPos
+
+    <rectScale 2 / >rect2
+    V4(
+        <rectPos <rect2 - EV2
+        <rectPos <rect2 + EV2
+    )
+
+:DebugSprite
+    # @DebugSprite(<image <origin <position <scale <color) >sprite
+    >color >scale >position >origin >image
+    
+    CreateSprite(<image <origin) >sprite
+    SetSpriteScale(<sprite <scale)
+    SetSpriteColor(<sprite <color)
+    SetSpritePosition(<sprite <position false)
+
+:ResetShips
+    true >reset
+    SetTimer1(<RESET_DURATION)
+
+:DebugPlacements
+    <_DATA{"data"}{"placementToggle"} >debugPlacements

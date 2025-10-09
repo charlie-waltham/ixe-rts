@@ -1,0 +1,18 @@
+{
+	"type": "part",
+	"position": [0, 0],
+	"pivot": [0.5, 0.5],
+	"configui": {
+		"title": {
+			"name": "factory_title",
+			"text": "Factory",
+			"textalignment": "Center",
+			"bgcolor": "#CFB161FF",
+			"tooltip": "Factory"
+		},
+		"width": 110,
+		"Components": [
+			{ "type": "choiceButton", "pos": [4,16], "name": "toggleFactory", "choices": ["OPEN", "CLOSE"], "events": ["ToggleFactoryUI"]}
+		]
+	}								
+}

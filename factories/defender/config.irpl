@@ -1,0 +1,210 @@
+$unit_type:"$/defender/defender"
+$max_units:3
+
+:Upgrades
+    # 0
+    "name" "Root"
+    "tier" 0
+    "costOre" 0
+    "costRedon" 0
+    "costGreenar" 0
+    "costSpectrite" 0
+    "unitFunction" null
+    "onceFunction" null
+    "description" "Root node"
+    "position" V2(224 250)
+    "prerequisite" null
+    11 TableN
+
+    # 1
+    "name" "Increased Damage Radius"
+    "tier" 1
+    "costOre" 200
+    "costRedon" 0
+    "costGreenar" 0
+    "costSpectrite" 0
+    "unitFunction" "IncreasedRadius"
+    "onceFunction" null
+    "description" "+2 Creeper damage radius"
+    "position" V2(224 330)
+    "prerequisite" 0
+    11 TableN
+
+    # 2
+    "name" "Additional Defender"
+    "tier" 2
+    "costOre" 400
+    "costRedon" 0
+    "costGreenar" 0
+    "costSpectrite" 0
+    "unitFunction" null
+    "onceFunction" "AddDefender"
+    "description" "+1 max Defenders"
+    "position" V2(176 410)
+    "prerequisite" 1
+    11 TableN
+
+    # 3
+    "name" "Efficient Weaponry"
+    "tier" 2
+    "costOre" 50
+    "costRedon" 0
+    "costGreenar" 200
+    "costSpectrite" 0
+    "unitFunction" "EffWeaponry"
+    "onceFunction" null
+    "description" "50% reduced energy use"
+    "position" V2(272 410)
+    "prerequisite" 1
+    11 TableN
+
+    # 4
+    "name" "High-Speed Projectiles"
+    "tier" 3
+    "costOre" 500
+    "costRedon" 250
+    "costGreenar" 0
+    "costSpectrite" 25
+    "unitFunction" "SpeedProjectiles"
+    "onceFunction" null
+    "description" "+15 Creeper damage<br>+3 shot speed"
+    "position" V2(176 490)
+    "prerequisite" 2
+    11 TableN
+
+    # 5
+    "name" "Increased Firerate"
+    "tier" 3
+    "costOre" 300
+    "costRedon" 150
+    "costGreenar" 50
+    "costSpectrite" 25
+    "unitFunction" "IncreasedFirerate"
+    "onceFunction" null
+    "description" "-0.1s fire delay"
+    "position" V2(272 490)
+    "prerequisite" 3
+    11 TableN
+
+    # 6
+    "name" "Additional Defender"
+    "tier" 4
+    "costOre" 600
+    "costRedon" 100
+    "costGreenar" 0
+    "costSpectrite" 0
+    "unitFunction" null
+    "onceFunction" "AddDefender"
+    "description" "+1 max Defenders"
+    "position" V2(272 570)
+    "prerequisite" 5
+    11 TableN
+
+    # 7
+    "name" "Increased Damage Radius"
+    "tier" 4
+    "costOre" 500
+    "costRedon" 300
+    "costGreenar" 0
+    "costSpectrite" 50
+    "unitFunction" "IncreasedRadius2"
+    "onceFunction" null
+    "description" "+4 Creeper damage radius"
+    "position" V2(176 570)
+    "prerequisite" 4
+    11 TableN
+
+    List
+
+:IncreasedRadius
+    >unit
+    GetControllerArg(<unit "cannon" "shot_damage_distance") >radius
+    # Sometimes it fails to read at unpredictable times
+    if (IsNull(<radius)) 8 >radius endif
+    SetControllerArg(<unit "cannon" "shot_damage_distance" <radius 2 +)
+
+:IncreasedRadius2
+    >unit
+    GetControllerArg(<unit "cannon" "shot_damage_distance") >radius
+    # Sometimes it fails to read at unpredictable times
+    if (IsNull(<radius)) 10 >radius endif
+    SetControllerArg(<unit "cannon" "shot_damage_distance" <radius 4 +)
+
+:EffWeaponry
+    >unit
+    GetControllerArg(<unit "cannon" "fire_cost") >cost
+    if (IsNull(<cost)) 0.1 >cost endif
+    SetControllerArg(<unit "cannon" "fire_cost" <cost 2.0 /)
+
+:SpeedProjectiles
+    >unit
+    GetControllerArg(<unit "cannon" "shot_speed") >speed
+    GetControllerArg(<unit "cannon" "shot_damage") >damage
+    if (IsNull(<speed)) 2 >speed endif
+    if (IsNull(<damage)) -2000000 >damage endif
+    SetControllerArg(<unit "cannon" "shot_speed" <speed 3 +)
+    SetControllerArg(<unit "cannon" "shot_damage" <damage -150000000 +)
+
+:IncreasedFirerate
+    >unit
+    GetControllerArg(<unit "cannon" "fire_delay") >delay
+    if (IsNull(<delay)) 10 >delay endif
+    SetControllerArg(<unit "cannon" "fire_delay" <delay 3 -)
+
+:AddDefender
+    @Get("max_units") 1 + @Set("max_units")
+
+# IGNORE BELOW
+
+:Once
+    @Upgrades >upgrades
+    <upgrades @Set("upgrades")
+    <unit_type @Set("unit_type")
+    <max_units @Set("max_units")
+    RegisterForMsg("Upgrade" self 1 - Concat "Upgrade")
+    RegisterForMsg("ApplyUpgrades" self 1 - Concat "ApplyUpgrades")
+
+:Upgrade
+    # @Upgrade
+    # Apply new upgrade to all current units
+
+    <_DATA{"tier"} <maxTier max >maxTier
+
+    <_DATA{"onceFunction"} >onceFunction
+    if (<onceFunction IsNull !)
+        refcall(<onceFunction)
+    endif
+
+    <_DATA{"unitFunction"} >unitFunction
+    @Get("units") >units
+
+    <units 0 do
+        SetColor(<units[i] @Get("tierColours")[<maxTier])
+        if (<unitFunction IsNull !)
+            <units[i] refcall(<unitFunction)
+        endif
+    loop
+
+:ApplyUpgrades
+    # @ApplyUpgrades
+    # Apply all owned upgrades to a given unit
+
+    <_DATA >unit
+    @Get("ownedUpgrades") >ownedUpgrades
+    <ownedUpgrades 0 do
+        # Messy because I decided to store owned upgrades by index at some point
+        <upgrades[<ownedUpgrades[i]]{"unitFunction"} >unitFunction
+        if (<unitFunction IsNull !)
+            <unit refcall(<unitFunction)
+        endif
+
+        SetColor(<unit @Get("tierColours")[<maxTier])
+    loop
+
+:Get
+    >var
+    GetScriptVar(self "/rts/factories/factory.irpl" <var)
+
+:Set
+    >var >val
+    SetScriptVar(self "/rts/factories/factory.irpl" <var <val)

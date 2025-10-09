@@ -1,0 +1,63 @@
+$range:50
+
+# Unused, part of an old iteration
+
+GetPixelCount(self) >pixelCount
+if (<pixelCount.2 <pixelCount.3 + neq0)
+    CreateList >sands
+    0 >prevSandCount
+    SetBeamEnabled(self <beam false)
+    return
+endif
+
+GetPosition(self) >pos
+V4(
+    <pos.x <range - <pos.y <range -
+    <pos.x <range + <pos.y <range +
+) >area
+GetSandInArea(<area true <ores true) >currentSands
+
+if (GetListCount(<currentSands) <prevSandCount !=)
+    <currentSands >sands
+    SetBeamEnabled(self <beam true)
+endif
+
+if (GetListCount(<sands) gt0)
+    PopList(<sands) >closest
+    # Shouldn't be necessary but is???
+    if (IsNull(<closest))
+        0 >prevSandCount
+        SetBeamEnabled(self <beam false)
+        return
+    endif
+
+    CreateSand(<closest.x <closest.y 255)
+    GetListCount(<currentSands) 1 - >prevSandCount
+
+    @Mined(<closest)
+
+    SetBeamEnd(self <beam <closest)
+else
+    0 >prevSandCount
+    SetBeamEnabled(self <beam false)
+endif
+
+:Mined
+    # @Mined(<sand)
+    >sand
+
+    <-*rts_materials{<sand.2} 1 + ->*rts_materials{<sand.2}
+
+:Once
+    GetTableKeys(<-*rts_materials) >ores
+
+    SetShowRange(self <range)
+    @GameLoaded # Just in case
+
+:GameLoaded
+    if (BeamExists(self <beam) !)
+        CreateBeam(self "terp") >beam
+    endif
+
+:Awake
+    SetShowRange(self <range)

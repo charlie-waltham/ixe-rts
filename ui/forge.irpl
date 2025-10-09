@@ -1,0 +1,76 @@
+:Once
+    RegisterForMsg("CreateBuildUI" dup)
+    RegisterForMsg("ToggleBuildUI" dup)
+
+    false >open
+
+:ToggleBuildUI
+    <open ! >open
+    if (<open)
+        @CreateBuildUI
+    else
+        DestroyUI("build")
+    endif
+
+:Fmt
+    # @Fmt(<amt)
+    # Formats a number such that values >=1000 are converted to K values.
+
+    dup 1000 >= if
+        1000.0 / 1 round "K" Concat
+    endif
+
+:CreateBuildUI
+    DestroyUI("build")
+
+    730 >height
+    GetTableKeys(<-*rts_buildOptions) ReverseList >keys
+    GetTableCount(<-*rts_buildOptions) 0 do
+        <-*rts_buildOptions{<keys[i]} >option
+        <height 64 - >height
+
+        @ColourCode(<-*rts_materials{31} <option{"costOre"}) >oreColour
+        @ColourCode(<-*rts_materials{32} <option{"costRedon"}) >redonColour
+        @ColourCode(<-*rts_materials{33} <option{"costGreenar"}) >greenarColour
+        @ColourCode(<-*rts_materials{34} <option{"costSpectrite"}) >spectriteColour
+
+        "
+        { 'type': 'button', 'pos': [32," <height "], 'width': 448, 'height': 54, 'name': '" <keys[i] "Background', 'color': '#000', 'bgcolor': '#333'},
+        { 'type': 'image', 'pos': [37," <height 5 + "], 'width': 44, 'height': 44, 'name': '" <keys[i] "Image', 'color': '#fff', 'bgcolor': '#000', 'image': '" <option{"image"} "'},
+        { 'type': 'text', 'pos': [90," <height 30 + "], 'width': 100, 'height': 24, 'name': '" <keys[i] "Name', 'color': '#fff', 'text': '" <option{"name"}"'},
+        { 'type': 'image', 'pos': [90," <height 5 + "], 'width': 24, 'height': 24, 'name': '" <keys[i] "OreIcon', 'color': '#fff', 'bgcolor': '#000', 'image': '/rts/images/icons/ore.png', 'tooltip': 'Ore'},
+        { 'type': 'text', 'pos': [120," <height 5 + "], 'width': 120, 'height': 24, 'name': '" <keys[i] "Ore', 'color': '#fff', 'bgcolor': '#123B4F00', 'text': '<color=" <oreColour ">" <option{"costOre"} @Fmt "'},
+        { 'type': 'image', 'pos': [180," <height 5 + "], 'width': 24, 'height': 24, 'name': '" <keys[i] "RedonIcon', 'color': '#fff', 'bgcolor': '#000', 'image': '/rts/images/icons/redon.png', 'tooltip': 'Redon'},
+        { 'type': 'text', 'pos': [210," <height 5 + "], 'width': 120, 'height': 24, 'name': '" <keys[i] "Redon', 'color': '#fff', 'bgcolor': '#123B4F00', 'text': '<color=" <redonColour ">" <option{"costRedon"} @Fmt "'},
+        { 'type': 'image', 'pos': [270," <height 5 + "], 'width': 24, 'height': 24, 'name': '" <keys[i] "GreenarIcon', 'color': '#fff', 'bgcolor': '#000', 'image': '/rts/images/icons/greenar.png', 'tooltip': 'Greenar'},
+        { 'type': 'text', 'pos': [300," <height 5 + "], 'width': 120, 'height': 24, 'name': '" <keys[i] "Greenar', 'color': '#fff', 'bgcolor': '#123B4F00', 'text': '<color=" <greenarColour ">" <option{"costGreenar"} @Fmt "'},
+        { 'type': 'image', 'pos': [360," <height 5 + "], 'width': 24, 'height': 24, 'name': '" <keys[i] "SpectriteIcon', 'color': '#fff', 'bgcolor': '#000', 'image': '/rts/images/icons/spectrite.png', 'tooltip': 'Spectrite'},
+        { 'type': 'text', 'pos': [390," <height 5 + "], 'width': 120, 'height': 24, 'name': '" <keys[i] "Spectrite', 'color': '#fff', 'bgcolor': '#123B4F00', 'text': '<color=" <spectriteColour ">" <option{"costSpectrite"} @Fmt "'},
+        { 'type': 'image', 'pos': [32," <height "], 'width': 448, 'height': 54, 'name': '" <keys[i] "Tooltip', 'color': '#0000', 'bgcolor': '#0000', 'image': '/rts/images/square.png', 'tooltip': '" <option{"tooltip"} "'},
+        { 'type': 'button', 'pos': [398," <height 30 + "], 'width': 80, 'height': 24, 'name': '" <keys[i] "', 'color': '#fff', 'bgcolor': '#0c0', 'text': 'BUILD', 'events': ['BuildShip', 'CreateBuildUI']},
+        "
+    loop
+    @ConcatAll >optionsJSON
+
+    "{
+        'anchor': [0,0.5], 'pos': [0,0], 'pivot': [0,0.5], 'width': 512, 'height': 768, 'bgcolor': '#123B4F66', 'Components': [
+            { 'type': 'button', 'pos': [0,720], 'width': 512, 'height': 48, 'name': 'title', 'color': '#fff', 'bgcolor': '#0000', 'text': '<size=200%>FORGE'},
+        " <optionsJSON "
+        ]
+    }" @ConcatAll >json
+
+    CreateTable >uiData
+    CreateUI("build" <json <uiData) pop pop
+
+:ConcatAll
+    StackSize 1 do
+        Concat
+    loop
+
+:ColourCode
+    # @ColourCode(<a <b) >colour
+    >b >a
+
+    if (<b eq0) "#fff" return endif
+    if (<a <b >=) "#5f5" return endif
+    "#f33"

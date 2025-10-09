@@ -1,0 +1,19 @@
+{
+	"type": "unit",
+	"displayname": "Fissure",
+	"image": "body.png",
+	"position": [ 0, 0 ],
+	"pivot": [ 0.5, 0.5 ],
+	"creeperdamages": false,
+	"botdamages": false,
+	"sanddamages": false,
+	"sandparticledamages": false,
+	"explosiondamages": false,
+	"enemyignore": true,
+	"parts": [
+		{ "part": "uipart.json" }
+	],
+	"scripts": [
+		{"name": "script.irpl"}
+	]
+}

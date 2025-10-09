@@ -1,0 +1,244 @@
+$unit_type:"$/frigate/frigate"
+$max_units:1
+
+:Upgrades
+    # 0
+    "name" "Root"
+    "tier" 0
+    "costOre" 0
+    "costRedon" 0
+    "costGreenar" 0
+    "costSpectrite" 0
+    "unitFunction" null
+    "onceFunction" null
+    "description" "Root node"
+    "position" V2(224 210)
+    "prerequisite" null
+    11 TableN
+
+    # 1
+    "name" "Onboard Reactor"
+    "tier" 1
+    "costOre" 100
+    "costRedon" 0
+    "costGreenar" 200
+    "costSpectrite" 0
+    "unitFunction" "OnboardReactor"
+    "onceFunction" null
+    "description" "+1 ammo every 2 seconds"
+    "position" V2(224 290)
+    "prerequisite" 0
+    11 TableN
+
+    # 2
+    "name" "Increased Rocket Range"
+    "tier" 2
+    "costOre" 400
+    "costRedon" 200
+    "costGreenar" 0
+    "costSpectrite" 0
+    "unitFunction" "IncreasedRange"
+    "onceFunction" null
+    "description" "+50 rocket range"
+    "position" V2(176 370)
+    "prerequisite" 1
+    11 TableN
+
+    # 3
+    "name" "Increased Cannon Radius"
+    "tier" 2
+    "costOre" 50
+    "costRedon" 0
+    "costGreenar" 200
+    "costSpectrite" 0
+    "unitFunction" "IncreasedRadius"
+    "onceFunction" null
+    "description" "+3 cannon damage radius"
+    "position" V2(272 370)
+    "prerequisite" 1
+    11 TableN
+
+    # 4
+    "name" "Increased Rocket Firerate"
+    "tier" 3
+    "costOre" 200
+    "costRedon" 300
+    "costGreenar" 0
+    "costSpectrite" 25
+    "unitFunction" "IncreasedRocketFirerate"
+    "onceFunction" null
+    "description" "-1s rocket fire delay"
+    "position" V2(176 450)
+    "prerequisite" 2
+    11 TableN
+
+    # 5
+    "name" "Increased Cannon Firerate"
+    "tier" 3
+    "costOre" 200
+    "costRedon" 300
+    "costGreenar" 0
+    "costSpectrite" 25
+    "unitFunction" "IncreasedCannonFirerate"
+    "onceFunction" null
+    "description" "-0.1s cannon fire delay"
+    "position" V2(272 450)
+    "prerequisite" 3
+    11 TableN
+
+    # 6
+    "name" "Additional Frigate"
+    "tier" 4
+    "costOre" 1000
+    "costRedon" 100
+    "costGreenar" 0
+    "costSpectrite" 200
+    "unitFunction" null
+    "onceFunction" "AddFrigate"
+    "description" "+1 max Frigates"
+    "position" V2(176 530)
+    "prerequisite" 4
+    11 TableN
+
+    # 7
+    "name" "Additional Frigate"
+    "tier" 4
+    "costOre" 1000
+    "costRedon" 100
+    "costGreenar" 0
+    "costSpectrite" 200
+    "unitFunction" null
+    "onceFunction" "AddFrigate"
+    "description" "+1 max Frigates"
+    "position" V2(272 530)
+    "prerequisite" 5
+    11 TableN
+
+    # 8
+    "name" "Independent Command"
+    "tier" 5
+    "costOre" 1000
+    "costRedon" 0
+    "costGreenar" 500
+    "costSpectrite" 200
+    "unitFunction" "IndCommand"
+    "onceFunction" null
+    "description" "Frigates produce and transmit Energy"
+    "position" V2(176 610)
+    "prerequisite" 6
+    11 TableN
+
+    List
+
+:OnboardReactor
+    >unit
+    SetUnitProperty(<unit "autoammo" 1.0 60.0 /)
+
+:IncreasedRange
+    >unit
+    GetChildren(<-unit) ->parts
+    <-parts 0 do
+        if (GetPartData(<-parts[i]){"name"} "$/weapon_rocket/weapon_rocket.json" ==)
+            GetScript1Var(<parts[i] "FIRE_RANGE") >range
+            # Sometimes it fails to read at unpredictable times
+            if (IsNull(<range)) 75 >range endif
+            SetScript1Var(<parts[i] "FIRE_RANGE" <range 50 +)
+        endif
+    loop
+
+:IncreasedRadius
+    >unit
+    GetChildren(<-unit) ->parts
+    <-parts 0 do
+        if (GetPartData(<-parts[i]){"name"} "$/weapon_cannon/weapon_cannon.json" ==)
+            GetControllerArg2(<parts[i] 0 "shot_damage_distance") >radius
+            if (IsNull(<radius)) 8 >radius endif
+            SetControllerArg2(<parts[i] 0 "shot_damage_distance" <radius 3 +)
+        endif
+    loop
+
+:IncreasedRocketFirerate
+    >unit
+    GetChildren(<-unit) ->parts
+    <-parts 0 do
+        if (GetPartData(<-parts[i]){"name"} "$/weapon_rocket/weapon_rocket.json" ==)
+            GetScript1Var(<parts[i] "FIRE_DELAY") >delay
+            if (IsNull(<delay)) 100 >delay endif
+            SetScript1Var(<parts[i] "FIRE_DELAY" max(30 <delay 30 -))
+        endif
+    loop
+
+:IncreasedCannonFirerate
+    >unit
+    GetChildren(<-unit) ->parts
+    <-parts 0 do
+        if (GetPartData(<-parts[i]){"name"} "$/weapon_cannon/weapon_cannon.json" ==)
+            GetControllerArg2(<parts[i] 0 "fire_delay") >delay
+            if (IsNull(<delay)) 10 >delay endif
+            SetControllerArg2(<parts[i] 0 "fire_delay" <delay 3 -)
+        endif
+    loop
+
+:AddFrigate
+    @Get("max_units") 1 + @Set("max_units")
+
+:IndCommand
+    >unit
+    SetUnitProperty(<unit "isapex" true)
+    SetUnitProperty(<unit "powergeneration" 0.01 0.1 3600 3 ListN)
+    SetUnitProperty(<unit "powerdispatchstoremax" 1)
+
+# IGNORE BELOW
+
+:Once
+    @Upgrades >upgrades
+    <upgrades @Set("upgrades")
+    <unit_type @Set("unit_type")
+    <max_units @Set("max_units")
+    RegisterForMsg("Upgrade" self 1 - Concat "Upgrade")
+    RegisterForMsg("ApplyUpgrades" self 1 - Concat "ApplyUpgrades")
+
+:Upgrade
+    # @Upgrade
+    # Apply new upgrade to all current units
+
+    <_DATA{"tier"} <maxTier max >maxTier
+
+    <_DATA{"onceFunction"} >onceFunction
+    if (<onceFunction IsNull !)
+        refcall(<onceFunction)
+    endif
+
+    <_DATA{"unitFunction"} >unitFunction
+    @Get("units") >units
+
+    <units 0 do
+        SetColor(<units[i] @Get("tierColours")[<maxTier])
+        if (<unitFunction IsNull !)
+            <units[i] refcall(<unitFunction)
+        endif
+    loop
+
+:ApplyUpgrades
+    # @ApplyUpgrades
+    # Apply all owned upgrades to a given unit
+
+    <_DATA >unit
+    @Get("ownedUpgrades") >ownedUpgrades
+    <ownedUpgrades 0 do
+        # Messy because I decided to store owned upgrades by index at some point
+        <upgrades[<ownedUpgrades[i]]{"unitFunction"} >unitFunction
+        if (<unitFunction IsNull !)
+            <unit refcall(<unitFunction)
+        endif
+
+        SetColor(<unit @Get("tierColours")[<maxTier])
+    loop
+
+:Get
+    >var
+    GetScriptVar(self "/rts/factories/factory.irpl" <var)
+
+:Set
+    >var >val
+    SetScriptVar(self "/rts/factories/factory.irpl" <var <val)

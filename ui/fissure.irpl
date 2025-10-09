@@ -1,0 +1,47 @@
+:CreateFissureUI
+    DestroyUI("fissure")
+
+    PosToPixel(GetPosition(<_DATA)) >pos
+
+    GetScript1Var(<_DATA "resource") >resource
+    switch
+        case(<resource 31 ==)
+            "ore"
+        endcase
+        case(<resource 32 ==)
+            "redon"
+        endcase
+        case(<resource 33 ==)
+            "greenar"
+        endcase
+        case(<resource 34 ==)
+            "spectrite"
+        endcase
+    endswitch >resourceName
+
+    GetScript1Var(<_DATA "amount") >amount
+    GetScript1Var(<_DATA "extract_cost") >cost
+
+    "{
+        'anchor': [0,0], 'pos': [" <pos.x "," <pos.y 30 - "], 'pivot': [0.5, 1], 'width': 246, 'height': 76, 'bgcolor': '#2226', 'Components': [
+            { 'type': 'text', 'pos': [30,48], 'width': 260, 'height': 24, 'name': 'title', 'color': '#fff', 'bgcolor': '#0000', 'text': 'FISSURE' },
+            { 'type': 'image', 'pos': [2,48], 'width': 24, 'height': 24, 'name': 'oreIcon', 'color': '#fff', 'bgcolor': '#000', 'image': '/rts/images/icons/" <resourceName ".png', 'tooltip': 'Ore'},
+            { 'type': 'text', 'pos': [2,24], 'width': 260, 'height': 24, 'name': 'amount', 'color': '#fff', 'bgcolor': '#0000', 'text': '" <amount " REMAINING' },
+            { 'type': 'text', 'pos': [2,0], 'width': 260, 'height': 24, 'name': 'cost', 'color': '#fff', 'bgcolor': '#0000', 'text': '" <cost " ENERGY / " ToUpper(<resourceName) "' },
+        ]
+    }" @ConcatAll >json
+
+    CreateTable >uiData
+    CreateUI("fissure" <json <uiData) pop pop
+
+:DestroyFissureUI
+    DestroyUI("fissure")
+
+:Once
+    RegisterForMsg("CreateFissureUI" dup)
+    RegisterForMsg("DestroyFissureUI" dup)
+
+:ConcatAll
+    StackSize 1 do
+        Concat
+    loop

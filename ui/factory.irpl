@@ -1,0 +1,211 @@
+$INDICATOR_ROT_SPEED:-0.05
+
+if (GetListCount(<sprites) gt0)
+    ElapsedTime <INDICATOR_ROT_SPEED * >angle
+    CreateList >destroyedSprites
+    <sprites 0 do
+        if (GetDestroyed(<childUnits[i]))
+            DestroySprite(<sprites[i])
+            AppendToList(<destroyedSprites i)
+        else
+            SetSpritePosition(<sprites[i] GetPosition(<childUnits[i]) false)
+            SetSpriteRotation(<sprites[i] <angle false)
+        endif
+    loop
+
+    <destroyedSprites 0 do
+        RemoveListElement(<sprites <destroyedSprites[i])
+    loop
+endif
+
+GetSelectedUnits >selectedUnits
+if (ListContains(<selectedUnits <unit) !)
+    false >uiOpen
+    @CloseFactoryUI
+endif
+
+<selectedUnits 0 do
+    GetPixelCount(<selectedUnits[i]) >pixelCount
+    if (<pixelCount.3 eq0)
+        GetScriptVar(<selectedUnits[i] "/rts/factories/factory.irpl" "upgrades") >upgrades
+        if (IsNull(<upgrades) !)
+            <selectedUnits[i] >unit
+
+            if (GetListCount(<sprites) eq0)
+                CreateList >sprites
+                GetScriptVar(<unit "/rts/factories/factory.irpl" "units") Copy >childUnits
+                <childUnits 0 do
+                    CreateSprite("/rts/images/indicator.png" V2(0.5 0.5)) >sprite
+                    SetSpriteScale(<sprite V2(0.5 0.5))
+                    SetSpritePosition(<sprite GetPosition(<childUnits[i]) false)
+                    AppendToList(<sprites <sprite)
+                loop
+            endif
+    
+            # Only show the UI for the first selected factory
+            break
+        endif
+    endif
+loop
+
+:Once
+    false >uiOpen
+    "oreIcon" "ore" "redonIcon" "redon" "greenarIcon" "greenar" "spectriteIcon" "spectrite" List >upgradeUIComponents
+    CreateList >sprites
+
+    RegisterForMsg("CreateFactoryUI" dup)
+    RegisterForMsg("CloseFactoryUI" dup)
+    RegisterForMsg("ToggleFactoryUI" dup)
+    RegisterForMsg("UpgradePreview" dup)
+    RegisterForMsg("BuyUpgrade" dup)
+
+:CreateFactoryUI
+    DestroyUI("factory")
+
+    GetScriptVar(<unit "/rts/factories/factory.irpl" "ownedUpgrades") >ownedUpgrades
+    ""
+    <upgrades 0 do
+        <upgrades[i]{"position"} >pos
+        # Hiding unreachable upgrades is disabled for now
+        if (true)
+            if(ListContains(<ownedUpgrades <upgrades[i]{"prerequisite"}) !) "#333"
+            else if (ListContains(<ownedUpgrades i)) "#999"
+            else "#ccc"
+            endif endif >colour
+
+            <upgrades[i]{"name"} "<br>" Concat
+            <upgrades[i]{"description"} "<br>" Concat3
+            <upgrades[i]{"costOre"} "O " Concat3
+            <upgrades[i]{"costRedon"} "R " Concat3
+            <upgrades[i]{"costGreenar"} "G " Concat3
+            <upgrades[i]{"costSpectrite"} "S" Concat3
+            >tooltip
+
+            "{
+                'type': 'button',
+                'pos': [" <pos.x "," <pos.y "],
+                'width': 64, 'height': 64,
+                'name': '" i "',
+                'color': '#fff', 'bgcolor': '" <colour "',
+                'tooltip': '" <upgrades[i]{"name"} "',
+                'image': '/rts/images/tiers/" <upgrades[i]{"tier"} ".png',
+                'events': ['UpgradePreview'],
+                'tooltip': '" <tooltip "'
+            },"
+        else
+            "{
+                'type': 'button',
+                'pos': [" <pos.x "," <pos.y "],
+                'width': 64, 'height': 64,
+                'name': '" i "',
+                'color': '#fff', 'bgcolor': '#333',
+                'image': '/rts/images/icons/unknown.png'
+            },"
+        endif
+    loop
+    @ConcatAll >nodeJSON
+
+    "{
+        'anchor': [0.5,0.5], 'pos': [0,0], 'pivot': [0.5,0.5], 'width': 512, 'height': 768, 'bgcolor': '#123B4F66', 'Components': [
+            { 'type': 'button', 'pos': [0,730], 'width': 512, 'height': 40, 'name': 'title', 'color': '#fff', 'bgcolor': '#0000', 'text': '" GetUnitProperty(<unit "displayname") "'},
+            { 'type': 'image', 'pos': [6,200], 'width': 500, 'height': 512, 'name': 'background', 'color': '#0005', 'bgcolor': '#0000', 'image': '/rts/images/square.png'},
+            { 'type': 'button', 'pos': [0,40], 'width': 512, 'height': 160, 'name': 'description', 'color': '#fff', 'bgcolor': '#0000', 'text': ''},
+            { 'type': 'button', 'pos': [192,5], 'width': 128, 'height': 30, 'name': 'buy', 'color': '#fff', 'bgcolor': '#0f0f', 'text': 'UPGRADE', 'events': ['BuyUpgrade'], 'active': false},
+            { 'type': 'image', 'pos': [90,50], 'width': 24, 'height': 24, 'name': 'oreIcon', 'color': '#fff', 'bgcolor': '#000', 'image': '/rts/images/icons/ore.png', 'tooltip': 'Ore', 'active': false},
+            { 'type': 'text', 'pos': [120,50], 'width': 120, 'height': 24, 'name': 'ore', 'color': '#fff', 'bgcolor': '#123B4F00', 'text': '0', 'active': false},
+            { 'type': 'image', 'pos': [180,50], 'width': 24, 'height': 24, 'name': 'redonIcon', 'color': '#fff', 'bgcolor': '#000', 'image': '/rts/images/icons/redon.png', 'tooltip': 'Redon', 'active': false},
+            { 'type': 'text', 'pos': [210,50], 'width': 120, 'height': 24, 'name': 'redon', 'color': '#fff', 'bgcolor': '#123B4F00', 'text': '0', 'active': false},
+            { 'type': 'image', 'pos': [270,50], 'width': 24, 'height': 24, 'name': 'greenarIcon', 'color': '#fff', 'bgcolor': '#000', 'image': '/rts/images/icons/greenar.png', 'tooltip': 'Greenar', 'active': false},
+            { 'type': 'text', 'pos': [300,50], 'width': 120, 'height': 24, 'name': 'greenar', 'color': '#fff', 'bgcolor': '#123B4F00', 'text': '0', 'active': false},
+            { 'type': 'image', 'pos': [360,50], 'width': 24, 'height': 24, 'name': 'spectriteIcon', 'color': '#fff', 'bgcolor': '#000', 'image': '/rts/images/icons/spectrite.png', 'tooltip': 'Spectrite', 'active': false},
+            { 'type': 'text', 'pos': [390,50], 'width': 120, 'height': 24, 'name': 'spectrite', 'color': '#fff', 'bgcolor': '#123B4F00', 'text': '0', 'active': false},
+            " <nodeJSON "
+        ]
+    }" Concat4 Concat >json
+
+    CreateTable >uiData
+    CreateUI("factory" <json <uiData) pop pop
+
+:CloseFactoryUI
+    DestroyUI("factory")
+
+    WriteConfig(GetChildren(<unit)[0] "toggleFactory" "OPEN")
+    <sprites 0 do
+        DestroySprite(<sprites[i])
+    loop
+    CreateList >sprites
+
+:ToggleFactoryUI
+    <uiOpen ! >uiOpen
+    if (<uiOpen)
+        @CreateFactoryUI
+    else
+        @CloseFactoryUI
+    endif
+
+:UpgradePreview
+    <_DATA{"name"} asint >upgradeId
+    <upgrades[<upgradeId] >upgrade
+    <upgrade{"name"} "<br>" <upgrade{"description"} Concat3 >text
+
+    <upgradeUIComponents 0 do
+        SetUIActive("factory" <upgradeUIComponents[i] true)
+    loop
+
+    @ColourCode(<-*rts_materials{31} <upgrade{"costOre"}) >oreColour
+    @ColourCode(<-*rts_materials{32} <upgrade{"costRedon"}) >redonColour
+    @ColourCode(<-*rts_materials{33} <upgrade{"costGreenar"}) >greenarColour
+    @ColourCode(<-*rts_materials{34} <upgrade{"costSpectrite"}) >spectriteColour
+
+    "<color=" <oreColour ">" <upgrade{"costOre"} @Fmt Concat4 >uiData{"ore"}
+    "<color=" <redonColour ">" <upgrade{"costRedon"} @Fmt Concat4 >uiData{"redon"}
+    "<color=" <greenarColour ">" <upgrade{"costGreenar"} @Fmt Concat4 >uiData{"greenar"}
+    "<color=" <spectriteColour ">" <upgrade{"costSpectrite"} @Fmt Concat4 >uiData{"spectrite"}
+
+    SetUIText("factory" "description" <text)
+    if (ListContains(<ownedUpgrades <upgradeId) ListContains(<ownedUpgrades <upgrade{"prerequisite"}) ! ||)
+        SetUIActive("factory" "buy" false)
+    else
+        SetUIActive("factory" "buy" true)
+    endif
+
+:BuyUpgrade
+    if (
+        <-*rts_materials{31} <upgrade{"costOre"} >=
+        <-*rts_materials{32} <upgrade{"costRedon"} >= &&
+        <-*rts_materials{33} <upgrade{"costGreenar"} >= &&
+        <-*rts_materials{34} <upgrade{"costSpectrite"} >= &&
+    )
+        <-*rts_materials{31} <upgrade{"costOre"} - ->*rts_materials{31}
+        <-*rts_materials{32} <upgrade{"costRedon"} - ->*rts_materials{32}
+        <-*rts_materials{33} <upgrade{"costGreenar"} - ->*rts_materials{33}
+        <-*rts_materials{34} <upgrade{"costSpectrite"} - ->*rts_materials{34}
+
+        AppendToList(<ownedUpgrades <upgradeId)
+        SendMsg("Upgrade" <unit Concat <upgrade)
+        @CreateFactoryUI
+        PlaySound("UpgradeGemCollected" 1)
+    else
+        PlaySound("UIClickError" 1)
+    endif
+
+:ConcatAll
+    StackSize 1 do
+        Concat
+    loop
+
+:Fmt
+    # @FormatAmount(<amt)
+    # Formats a number such that values >=1000 are converted to K values.
+
+    dup 1000 >= if
+        1000.0 / 1 round "K" Concat
+    endif
+
+:ColourCode
+    # @ColourCode(<a <b) >colour
+    >b >a
+
+    if (<b eq0) "#fff" return endif
+    if (<a <b >=) "#5f5" return endif
+    "#f33"

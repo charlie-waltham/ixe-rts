@@ -1,0 +1,20 @@
+{
+	"type": "unit",
+	"displayname": "Fissure Extractor",
+	"permanentinventory": true,
+	"image": "body.png",
+	"position": [ 0, 0 ],
+	"pivot": [ 0.5, 0.5 ],
+	"sortingorder": -1,
+	"maxammo": 30,
+	"ammorequesttime": 6,
+	"parts": [
+		{ "part": "uipart.json" }
+	],
+	"controllers": [
+		{ "name": "ondestroy_sandexplosion" }
+	],
+	"scripts": [
+		{"name": "script.irpl"}
+	]
+}
