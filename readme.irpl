@@ -15,12 +15,40 @@
 # Third, be careful with particulate as the ship placement logic is blind to it. Part emitters should only
 # exist in places which have creeper.
 #
-#
-# If you wish to add new factories / change existing upgrades, you should start with one of the existing
-# factories as a template. Their config is poorly documented and still not in a finished state (sorry),
-# so if you need help understanding how to make upgrades feel free to message me (Up-Level) on Discord.
-#
 # Any new ships must have definitions in unitcontrol.irpl for their rectangular size, and if they are to
 # be controlled by the frontline system they must also have a "maxDistance" set. maxDistance is the
 # maximum number of frontline cells a ship will try to place itself away from the creeper. Frontline
 # cells can be seen by checking "Show Frontlines" in the RTS editor UI.
+#
+# CHANGELOG
+#
+# 0.2.0 -----------------------------------------------------------------------------------------------------
+# New shield ship + shield factory.
+# Added a focus beacon, which prioritises units to be placed near it.
+# Added a Bertha weapon, which can fire powerful volleys to anywhere on the map.
+# Most factories now have a final T5 upgrade.
+# Factories display current and potential DPS.
+# You can now sell all upgrades of a factory, or the factory itself.
+# Fissures now slowly regenerate resources over time, to a maxmium value.
+# Significantly improved performance of placement logic.
+# Fissure Extractor boost now only increases resource consumption 1.5X.
+# Refactor of factory upgrade logic. This allows for more interesting upgrades in the future.
+# Added a keybind to toggle the Forge (Custom0).
+#
+# --- Bug fixes and minor changes ---
+# Cannon damage radius upgrades now also increase shot_damage_count. This meant radius upgrades previously
+# were useless.
+# If a ship move has failed too many times, unitcontrol will now attempt to move a random ship. This should
+# increase the overall density of ships on the frontline.
+# The Fissure Extractor has a new animated sprite.
+# Clicking reset now recalculates creeper frontlines as fast as possible (2 seconds).
+# Fixed bug where dummy units were being killed by sand damage. This was causing ship placement to break.
+# Fixed bug where a ship placement was considered ok if ship rect boxes perfectly overlapped. This was
+# causing ships to move directly on top of each other.
+# Fixed bug causing factory ship indicator references to not be properly removed
+# Fixed bug where ships could be placed out of bounds
+# Fixed bug preventing factories from being moved
+# Improved frontline debug option to not reset every map iteration
+#
+# 0.1.0 -----------------------------------------------------------------------------------------------------
+# Initial release

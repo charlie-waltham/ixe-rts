@@ -1,0 +1,18 @@
+{
+	"type": "unit",
+	"displayname": "Shield",
+	"permanentinventory": true,
+	"image": "body.png",
+	"position": [0, 0],
+	"pivot": [0.5, 0.5],
+	"maxammo": 15,
+	"ammorequesttime": 6,
+	"movable": true,
+	"controllers": [
+		{"name": "fieldcontroller"},
+		{"name": "ondestroy_sandexplosion"}
+	],
+	"scripts": [
+		{"name": "script.irpl"}
+	]
+}

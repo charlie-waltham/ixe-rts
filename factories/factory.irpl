@@ -10,7 +10,7 @@ if (GetAmmo(self) GetMaxAmmo(self) >=)
     endif
 endif
 
-if (GetGameUpdateCount 30 % eq0)
+if (GetGameUpdateCount 30 % <checkDestroyedOffset ==)
     # Reverse order
     -1 <units 1 - do
         if (GetDestroyed(<units[i]))
@@ -22,23 +22,106 @@ endif
 :ProduceUnit
     CreateUnit(<unit_type GetPosition(self) true) >unit
     SetUnitProperty(<unit "movable" false)
-    EnableLos(<unit true)
-    SetLosRange(<unit 90)
-    SendMsg("ApplyUpgrades" self 1 - Concat <unit)
+
+    SetColor(<unit <tierColours[<maxTier])
+    SendMsg(
+        "ApplyAttributes" self 1 - Concat
+        TableN(
+            "units" <unit 1 ListN
+            "attribs" <attribs
+        2)
+    )
 
     AppendToList(<units <unit)
 
 :Upgrade
-    <spentMaterials{31} <_DATA{"costOre"} + >spentMaterials{31}
-    <spentMaterials{32} <_DATA{"costRedon"} + >spentMaterials{32}
-    <spentMaterials{33} <_DATA{"costGreenar"} + >spentMaterials{33}
-    <spentMaterials{34} <_DATA{"costSpectrite"} + >spentMaterials{34}
+    if (<_DATA{"noRefund"} 1 !=)
+        <spentMaterials{31} <_DATA{"costOre"} + >spentMaterials{31}
+        <spentMaterials{32} <_DATA{"costRedon"} + >spentMaterials{32}
+        <spentMaterials{33} <_DATA{"costGreenar"} + >spentMaterials{33}
+        <spentMaterials{34} <_DATA{"costSpectrite"} + >spentMaterials{34}
+    endif
+
+    <_DATA{"tier"} <maxTier max >maxTier
+    <units 0 do
+        SetColor(<units[i] <tierColours[<maxTier])
+    loop
+
+    if (<_DATA{"attribs"} IsNull !)
+        SendMsg(
+            "ApplyAttributes" self 1 - Concat
+            TableN(
+                "units" <units
+                "attribs" @DecodeAttribs(<_DATA{"attribs"})
+            2)
+        )
+    endif
+
+:SellUpgrades
+    @Destroyed
+    <ownedUpgrades 0 do
+        if (TableContainsKey(<upgrades[<ownedUpgrades[i]] "noRefund"))
+            @DecodeAttribs(<upgrades[<ownedUpgrades[i]]{"attribs"})
+            <ownedUpgrades[i]
+        endif
+    loop List >ownedUpgrades
+
+    0 >maxTier
+    GetTableKeys(<-*rts_materials) >keys
+    <keys 0 do
+        <keys[i] 0
+    loop
+    Table >spentMaterials
+
+:DecodeAttribs
+    # @DecodeAttribs(<attribString) >changedAttribs
+    >attribString
+
+    Split(<attribString "&") >attribStrs
+    CreateTable >affectedAttribs
+
+    <attribStrs 0 do
+        RemoveWhiteSpace(<attribStrs[i]) >attribStr
+        Split(<attribStr "|") >components
+        if (GetListCount(<components) 3 ==)
+            if (TableContainsKey(<attribs <components[0]) !) 0 >attribs{<components[0]} endif
+
+            <attribs{<components[0]}
+            <components[2] asfloat
+
+            <components[1] >action
+            switch
+                case (<action "+" ==) + endcase
+                case (<action "-" ==) - endcase
+                case (<action "*" ==) * endcase
+                case (<action "/" ==) / endcase
+                case (<action "=" ==) swap pop endcase
+                case (true) PrintAllSp(GetName(self) "Invalid attrib operator:" <attribStr) endcase
+            endswitch
+
+            dup
+            >attribs{<components[0]}
+            >affectedAttribs{<components[0]}
+        else
+            PrintAllSp(GetName(self) "Invalid attrib string:" <attribStr)
+        endif
+    loop
+
+    <affectedAttribs
 
 :Once
     CreateList >units
-    0 List >ownedUpgrades
+    CreateList >ownedUpgrades
+    0 >dps
+    0 >maxTier
+    RandInt(0 30) >checkDestroyedOffset
+
+    if (GetListCount(<upgrades) eq0)
+        CreateList >upgrades
+    endif
 
     RegisterForMsg("Upgrade" self 1 - Concat "Upgrade")
+    RegisterForMsg("SellUpgrades" self 1 - Concat "SellUpgrades")
     GetTableKeys(<-*rts_materials) >keys
     <keys 0 do
         <keys[i] 0

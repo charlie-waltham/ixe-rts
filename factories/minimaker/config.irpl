@@ -1,201 +1,180 @@
 $unit_type:"/rts/units/minimaker/minimaker"
-$max_units:2
 
 :Upgrades
     # 0
-    "name" "Root"
-    "tier" 0
-    "costOre" 0
-    "costRedon" 0
-    "costGreenar" 0
-    "costSpectrite" 0
-    "unitFunction" null
-    "onceFunction" null
-    "description" "Root node"
-    "position" V2(224 250)
-    "prerequisite" null
-    11 TableN
-
-    # 1
     "name" "Improved Range"
     "tier" 1
     "costOre" 300
     "costRedon" 0
     "costGreenar" 0
     "costSpectrite" 0
-    "unitFunction" "IncreasedRange"
-    "onceFunction" null
+    "attribs" "range|+|25"
     "description" "+25 range"
     "position" V2(224 330)
-    "prerequisite" 0
-    11 TableN
+    "prerequisite" null
+    10 TableN
 
-    # 2
+    # 1
     "name" "Efficient Reloaders"
     "tier" 2
     "costOre" 400
     "costRedon" 100
     "costGreenar" 50
     "costSpectrite" 0
-    "unitFunction" "IncreasedFirerate"
-    "onceFunction" null
+    "attribs" "fire_delay|-|1"
     "description" "-0.03s fire delay"
     "position" V2(176 410)
-    "prerequisite" 1
-    11 TableN
+    "prerequisite" 0
+    10 TableN
 
-    # 3
+    # 2
     "name" "Synthetic Anticreeper"
     "tier" 2
     "costOre" 400
     "costRedon" 200
     "costGreenar" 100
     "costSpectrite" 0
-    "unitFunction" "Synthetic"
-    "onceFunction" null
+    "attribs" "autocammo|+|80"
     "description" "Self-generates 80AC/s"
     "position" V2(272 410)
-    "prerequisite" 1
-    11 TableN
+    "prerequisite" 0
+    10 TableN
 
-    # 4
+    # 3
     "name" "Additional Mini Maker"
     "tier" 3
     "costOre" 600
     "costRedon" 400
     "costGreenar" 0
     "costSpectrite" 0
-    "unitFunction" null
-    "onceFunction" "AddMiniMaker"
+    "attribs" "max_units|+|1"
     "description" "+1 Mini Maker"
     "position" V2(176 490)
-    "prerequisite" 2
-    11 TableN
+    "prerequisite" 1
+    10 TableN
 
-    # 5
+    # 4
     "name" "Improved Anticreeper Synthesis"
     "tier" 3
     "costOre" 600
     "costRedon" 300
     "costGreenar" 300
     "costSpectrite" 0
-    "unitFunction" "Synthetic2"
-    "onceFunction" null
-    "description" "Generates an additional 80AC/s"
+    "attribs" "autocammo|+|120"
+    "description" "Generates an additional 120AC/s"
     "position" V2(272 490)
-    "prerequisite" 3
-    11 TableN
+    "prerequisite" 2
+    10 TableN
 
-    # 6
+    # 5
     "name" "Overclocked Reloaders"
     "tier" 4
     "costOre" 600
     "costRedon" 400
     "costGreenar" 0
     "costSpectrite" 150
-    "unitFunction" "IncreasedFirerate"
-    "onceFunction" null
+    "attribs" "fire_delay|-|1"
     "description" "-0.03s fire delay"
     "position" V2(176 570)
-    "prerequisite" 4
-    11 TableN
+    "prerequisite" 3
+    10 TableN
 
-    # 7
+    # 6
     "name" "Additional Mini Maker"
     "tier" 4
     "costOre" 600
     "costRedon" 400
     "costGreenar" 0
     "costSpectrite" 100
-    "unitFunction" null
-    "onceFunction" "AddMiniMaker"
+    "attribs" "max_units|+|1"
     "description" "+1 Mini Maker"
     "position" V2(272 570)
-    "prerequisite" 5
-    11 TableN
+    "prerequisite" 4
+    10 TableN
 
     List
 
-:IncreasedFirerate
-    >unit
-    GetChildren(<-unit) ->parts
-    <-parts 0 do
-        if (GetPartData(<-parts[i]){"name"} "$/weapon_maker/weapon_maker.json" ==)
-            GetControllerArg2(<parts[i] 0 "fire_delay") >delay
-            if (IsNull(<delay)) 8 >delay endif
-            SetControllerArg2(<parts[i] 0 "fire_delay" <delay 1 -)
+:DefaultAttributes
+    # @DefaultAttributes >attribs
+    # Returns a table of attributes and their default values.
+
+    "max_units" 2 # Required on all factories
+    "autocammo" 0
+    "range" 54
+    "fire_delay" 8
+    Table
+
+:ApplyAttributes
+    # @ApplyAttributes
+    # Apply attributes to all units.
+    # _DATA = {"units": list, "attribs": table}
+
+    <_DATA{"units"} >units
+    <_DATA{"attribs"} >attribs
+
+    # Singular attribs
+    if (TableContainsKey(<attribs "max_units"))
+        <attribs{"max_units"} @Set("max_units")
+    endif
+
+    # Per-unit attribs
+    GetTableKeys(<attribs) >keys
+    <keys 0 do
+        <keys[i] >attrib
+        <units 0 do
+            switch
+                case (<attrib "autocammo" ==)
+                    SetUnitProperty(<units[i] "autocammo" <attribs{<attrib} 30.0 /)
+                endcase
+                case (<attrib "range" ==)
+                    @SetControllerArgOnAllParts(<units[i] "$/weapon_maker/weapon_maker.json" "maker" "fire_range" <attribs{<attrib})
+                endcase
+                case (<attrib "fire_delay" ==)
+                    @SetControllerArgOnAllParts(<units[i] "$/weapon_maker/weapon_maker.json" "maker" "fire_delay" <attribs{<attrib})
+                endcase
+            endswitch
+        loop
+    loop
+
+:SetControllerArgOnAllParts
+    # @SetControllerArgOnAllParts(<unit <partName <controllerName <arg <value)
+    # Helper function for @ApplyAttributes.
+
+    >value >arg >controllerName >partName >unit
+
+    GetChildren(<unit) >parts
+    <parts 0 do
+        if (GetPartData(<parts[i]{"name"}) <partName ==)
+            SetControllerArg(<parts[i] <controllerName <arg <value)
         endif
     loop
 
-:IncreasedRange
-    >unit
-    GetChildren(<-unit) ->parts
-    <-parts 0 do
-        if (GetPartData(<-parts[i]){"name"} "$/weapon_maker/weapon_maker.json" ==)
-            GetControllerArg2(<parts[i] 0 "fire_range") >range
-            if (IsNull(<range)) 54 >range endif
-            SetControllerArg2(<parts[i] 0 "fire_range" <range 25 +)
-        endif
-    loop
+:PredictDPS
+    # @PredictDPS
+    # Return a predicted DPS for the given attribs.
+    # <_DATA is a table of attribs like @DefaultAttributes.
 
-:Synthetic
-    >unit
-    SetUnitProperty(<unit "autocammo" 80.0 30.0 /)
+    3 >numMakers
+    20 >acPerShot
 
-:Synthetic2
-    >unit
-    SetUnitProperty(<unit "autocammo" 160.0 30.0 /)
+    <_DATA{"fire_delay"} GetUpgradeBoost - 30.0 / >rate
+    <acPerShot <rate / <numMakers * >dps
 
-:AddMiniMaker
-    @Get("max_units") 1 + @Set("max_units")
-
+    <dps <_DATA{"max_units"} * @Set("dps")
 
 # IGNORE BELOW
 
 :Once
-    @Upgrades >upgrades
-    <upgrades @Set("upgrades")
-    <unit_type @Set("unit_type")
-    <max_units @Set("max_units")
-    RegisterForMsg("Upgrade" self 1 - Concat "Upgrade")
-    RegisterForMsg("ApplyUpgrades" self 1 - Concat "ApplyUpgrades")
+    @Upgrades          @Set("upgrades")
+    @DefaultAttributes @Set("attribs")
+    <unit_type         @Set("unit_type")
 
-:Upgrade
-    # @Upgrade
-    # Apply new upgrade to all current units
+    RegisterForMsg("ApplyAttributes"      self 1 - Concat "ApplyAttributes")
+    RegisterForMsg("PredictDPS"           self 1 - Concat "PredictDPS")
+    RegisterForMsg("SetDefaultAttributes" self 1 - Concat "SetDefaultAttributes")
 
-    <_DATA{"tier"} <maxTier max >maxTier
-
-    <_DATA{"onceFunction"} >onceFunction
-    if (<onceFunction IsNull !)
-        refcall(<onceFunction)
-    endif
-
-    <_DATA{"unitFunction"} >unitFunction
-    @Get("units") >units
-
-    <units 0 do
-        SetColor(<units[i] @Get("tierColours")[<maxTier])
-        if (<unitFunction IsNull !)
-            <units[i] refcall(<unitFunction)
-        endif
-    loop
-
-:ApplyUpgrades
-    # @ApplyUpgrades
-    # Apply all owned upgrades to a given unit
-
-    <_DATA >unit
-    @Get("ownedUpgrades") >ownedUpgrades
-    <ownedUpgrades 0 do
-        # Messy because I decided to store owned upgrades by index at some point
-        <upgrades[<ownedUpgrades[i]]{"unitFunction"} >unitFunction
-        if (<unitFunction IsNull !)
-            <unit refcall(<unitFunction)
-        endif
-
-        SetColor(<unit @Get("tierColours")[<maxTier])
-    loop
+:SetDefaultAttributes
+    @DefaultAttributes @Set("attribs")
 
 :Get
     >var

@@ -1,4 +1,5 @@
 :CreateFissureUI
+    <_DATA >unit
     DestroyUI("fissure")
 
     PosToPixel(GetPosition(<_DATA)) >pos
@@ -20,14 +21,17 @@
     endswitch >resourceName
 
     GetScript1Var(<_DATA "amount") >amount
+    GetScript1Var(<_DATA "amount") >amount_cap
     GetScript1Var(<_DATA "extract_cost") >cost
+    GetScript1Var(<_DATA "regen_per_min") >regen
 
     "{
-        'anchor': [0,0], 'pos': [" <pos.x "," <pos.y 30 - "], 'pivot': [0.5, 1], 'width': 246, 'height': 76, 'bgcolor': '#2226', 'Components': [
-            { 'type': 'text', 'pos': [30,48], 'width': 260, 'height': 24, 'name': 'title', 'color': '#fff', 'bgcolor': '#0000', 'text': 'FISSURE' },
-            { 'type': 'image', 'pos': [2,48], 'width': 24, 'height': 24, 'name': 'oreIcon', 'color': '#fff', 'bgcolor': '#000', 'image': '/rts/images/icons/" <resourceName ".png', 'tooltip': 'Ore'},
-            { 'type': 'text', 'pos': [2,24], 'width': 260, 'height': 24, 'name': 'amount', 'color': '#fff', 'bgcolor': '#0000', 'text': '" <amount " REMAINING' },
-            { 'type': 'text', 'pos': [2,0], 'width': 260, 'height': 24, 'name': 'cost', 'color': '#fff', 'bgcolor': '#0000', 'text': '" <cost " ENERGY / " ToUpper(<resourceName) "' },
+        'anchor': [0,0], 'pos': [" <pos.x "," <pos.y 30 - "], 'pivot': [0.5, 1], 'width': 200, 'height': 100, 'bgcolor': '#2226', 'Components': [
+            { 'type': 'text', 'pos': [30,72], 'width': 150, 'height': 24, 'name': 'title', 'color': '#fff', 'bgcolor': '#0000', 'text': 'FISSURE' },
+            { 'type': 'image', 'pos': [2,72], 'width': 24, 'height': 24, 'name': 'oreIcon', 'color': '#fff', 'bgcolor': '#000', 'image': '/rts/images/icons/" <resourceName ".png', 'tooltip': 'Ore'},
+            { 'type': 'text', 'pos': [2,48], 'width': 180, 'height': 24, 'name': 'amount', 'color': '#fff', 'bgcolor': '#0000', 'text': '" <amount "/" <amount_cap "' },
+            { 'type': 'text', 'pos': [2,24], 'width': 180, 'height': 24, 'name': 'cost', 'color': '#fff', 'bgcolor': '#0000', 'text': '" <cost " ENERGY EACH' },
+            { 'type': 'text', 'pos': [2,0], 'width': 180, 'height': 24, 'name': 'regen', 'color': '#fff', 'bgcolor': '#0000', 'text': '" <regen " / MIN REGEN' },
         ]
     }" @ConcatAll >json
 
@@ -37,9 +41,20 @@
 :DestroyFissureUI
     DestroyUI("fissure")
 
+:UpdateFissureUI
+    GetScript1Var(<unit "amount") >amount
+    GetScript1Var(<unit "amount_cap") >amount_cap
+    GetScript1Var(<unit "extract_cost") >cost
+    GetScript1Var(<unit "regen_per_min") >regen
+
+    <amount "/" <amount_cap Concat3 >uiData{"amount"}
+    <cost " ENERGY EACH" Concat >uiData{"cost"}
+    <regen " / MIN REGEN" Concat >uiData{"regen"}
+
 :Once
     RegisterForMsg("CreateFissureUI" dup)
     RegisterForMsg("DestroyFissureUI" dup)
+    RegisterForMsg("UpdateFissureUI" dup)
 
 :ConcatAll
     StackSize 1 do

@@ -1,8 +1,9 @@
 {
 	"type": "unit",
-	"position": [ 0, 0 ],
-	"pivot": [ 0.5, 0.5 ],
-	"image": "/rts/images/dummy.png",
+	"displayname": "Bertha Shot",
+	"image": "shot.png",
+	"position": [0, 0],
+	"pivot": [0.5, 0.5],
 	"buildmenuhide": true,
 	"enemyignore": true,
 	"creeperdamages": false,
@@ -11,5 +12,6 @@
 	"explosiondamages": false,
 	"botdamages": false,
 	"selectable": false,
-	"movelayer": 1
+	"movelayer": 1,
+	"isbuilt": true
 }

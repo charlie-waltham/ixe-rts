@@ -1,13 +1,17 @@
 $MAX_DELAY:10
-$ATTEMPTS_PER_DIST:5
-$MOVE_FURTHEST_INTERVAL:30
-$RESET_DURATION:90
+$ATTEMPTS_PER_DIST:3
+$FIND_UNASSIGNED_ATTEMPTS:10
+$FIND_ANY_ATTEMPTS:10
+$MOVES_BEFORE_FORCE:30
+$FAILED_MOVES_BEFORE_FORCE:5
+$RESET_DURATION:120
 $UPGRADE_RANGE_THRESHOLD:3
 
 if (<apexFound !)
     if (GetApex -1 !=)
+        # Enabling global reachable area seems to be the main performance bottleneck, interestingly
         EnableRa(GetApex true)
-        SetRaRange(GetApex 1024)
+        SetRaRange(GetApex 725)
         true >apexFound
     else
         return
@@ -42,6 +46,7 @@ endif
     "$/cryon/cryon"                     "scale" V2(16 12) "maxDistance" 3 2 TableN # Not actually controlled for now
     "$/particulateship/particulateship" "scale" V2(12 10) "maxDistance" 3 2 TableN
     "/rts/units/minimaker/minimaker"    "scale" V2(16 14) "maxDistance" 3 2 TableN
+    "/rts/units/shield/shield"          "scale" V2(10 10) "maxDistance" 4 2 TableN
     # Uncontrolled ships (PITA!!!!)
     "$/apexship/ship" "scale" V2(44 16) 1 TableN
     "$/apexabraxis/apexabraxis" "scale" V2(44 16) 1 TableN # Not the same as normal apex but close enough
@@ -65,10 +70,11 @@ endif
     "$/cryon/cryon"                     "scale" V2(16 12) "maxDistance" 5 2 TableN # Not actually controlled for now
     "$/particulateship/particulateship" "scale" V2(12 10) "maxDistance" 5 2 TableN
     "/rts/units/minimaker/minimaker"    "scale" V2(16 14) "maxDistance" 5 2 TableN
+    "/rts/units/shield/shield"          "scale" V2(10 10) "maxDistance" 4 2 TableN
     Table >ugpradedShipData
 
     GetTableKeys(<shipData) >allShips
-    "$/defender/defender" "$/gunship/gunship" "$/frigate/frigate" "$/particulateship/particulateship" "/rts/units/minimaker/minimaker" List >frontlineShips
+    "$/defender/defender" "$/gunship/gunship" "$/frigate/frigate" "$/particulateship/particulateship" "/rts/units/minimaker/minimaker" "/rts/units/shield/shield" List >frontlineShips
 
     RegisterForMsg("ResetShips" dup)
     RegisterForMsg("DebugPlacements" dup)
@@ -79,92 +85,77 @@ endif
     List >blockingSands
 
     false >invalidPath
-    false >apexFound
     false >reset
     false >debugPlacements
+    true >isUnassigned
     0 >count
+    0 >failedMoves
     CreateList >sprites
+    @GameLoaded
 
     SetTimer0(<MAX_DELAY)
     SetTimerObeyPause0(true)
     SetTimerObeyPause1(true)
 
-    RegisterScript("unitcontrol")
-
 :GameLoaded
     false >apexFound
+    RegisterScript("unitcontrol")
 
 :MoveUnits
-    <sprites 0 do
-        DestroySprite(<sprites[i])
+    # Don't bother if no frontline cells to move to
+    0
+    <-*frontlineCells 0 do
+        GetListCount(<-*frontlineCells[i]) +
     loop
-
-    GetUnitsInRange(256 256 512 <allShips) >allUnits
-
-    <allUnits 0 do
-        @GetRectVertices(
-            GetPosition(<allUnits[i])
-            <shipData{GetName(<allUnits[i])}{"scale"}
-        )
-    loop
-    List >unitRects
+    eq0 if return endif
 
     GetUnitsInRange(256 256 512 <frontlineShips) >units
     CreateList >unassignedUnits
 
-    <units 0 do
-        GetPosition(<units[i]) >pos
-        <shipData{GetName(<units[i])} >ship
-        V2 (
-            <pos.x dup <-*CREEPER_CHUNK_SIZE mod -
-            <pos.y dup <-*CREEPER_CHUNK_SIZE mod -
-        ) >currentCell
-
-        GetRaPath(GetApex <pos) >path
-        false >invalidPath
-        <path 0 do
-            <path[i] >pathPos
-            if (GetCreeper(<pathPos.x <pathPos.y) gt0)
-                true >invalidPath
+    # First try to find a unit in an invalid place
+    -1 >unit
+    if (<failedMoves <FAILED_MOVES_BEFORE_FORCE <) # Skip this if it failed too many times
+        <FIND_UNASSIGNED_ATTEMPTS 0 do
+            <units[RandInt(0 <units)] >potentialUnit
+            if (@IsUnitUnassigned(<potentialUnit))
+                <potentialUnit >unit
+                true >isUnassigned
                 break
             endif
         loop
+    endif
 
-        if (<invalidPath)
-            AppendToList(<unassignedUnits <units[i])
-        else
-            false >isOnFrontline
-            <ship{"maxDistance"} 1 + 0 do
-                if (ListContains(<-*frontlineCells[i] <currentCell))
-                    true >isOnFrontline
-                endif
-            loop
-
-            if (<isOnFrontline !)
-                AppendToList(<unassignedUnits <units[i])
-            endif
-        endif
-    loop
-
-    -1 >unit
-    if (GetListCount(<unassignedUnits) neq0)
-        <unassignedUnits[RandInt(0 <unassignedUnits)] >unit
-    else
+    # Otherwise, move any unit if it's been long enough, reset is enabled or failed finding move positions enough times
+    if (<unit -1 ==)
         <count 1 + >count
-        if (<count <MOVE_FURTHEST_INTERVAL > <reset ||)
+        if (<count <MOVES_BEFORE_FORCE > <failedMoves <FAILED_MOVES_BEFORE_FORCE >= || <reset ||)
             0 >count
-            10 0 do
+            <FIND_ANY_ATTEMPTS 0 do
                 <units[RandInt(0 <units)] >potentialUnit
-                GetPixelCount(<potentialUnit) >pixelCount
-                if (<pixelCount.2 eq0)
+                if (GetOnBoardComplete(<potentialUnit 0 true))
                     <potentialUnit >unit
+                    false >isUnassigned
                     break
                 endif
             loop
         endif
     endif
 
-    if (<unit -1 eq) return endif
+    if (<unit -1 ==) return endif
+
+    <sprites 0 do
+        DestroySprite(<sprites[i])
+    loop
+
+    GetUnitsInRange(256 256 512 <allShips) >allUnits
+    <allUnits 0 do
+        <allUnits[i]
+        @GetRectVertices(
+            GetPosition(<allUnits[i])
+            <shipData{GetName(<allUnits[i])}{"scale"}
+        )
+    loop
+    Table >unitRects
 
     GetName(<unit) >unitName
     <shipData{<unitName} >ship
@@ -179,7 +170,7 @@ endif
             RandInt(0 <-*CREEPER_CHUNK_SIZE) RandInt(0 <-*CREEPER_CHUNK_SIZE) V2 >innerPos
             <currentFrontline[<cellId] <innerPos + >newPos
 
-            if (@IsValidPosition(<newPos <ship <unitRects))
+            if (@IsValidPosition(<newPos <ship <unit))
                 MoveUnit(<unit <newPos)
                 true >locationFound
                 break
@@ -202,13 +193,54 @@ endif
         endif
     loop
 
-:IsValidPosition
-    # @IsValidPosition(<pos <ship <unitRects) >isValid
-    >unitRects >ship >pos
+    if (<locationFound)
+        0 >failedMoves
+    else if (<isUnassigned)
+        <failedMoves 1 + >failedMoves
+    endif endif
 
+:IsUnitUnassigned
+    # @IsUnitUnassigned(<unit) >isUnassigned
+    >thisUnit
+
+    GetPosition(<thisUnit) >pos
+
+    #GetRaPath(GetApex <pos) >path
+    #<path 0 do
+    #    <path[i] >pathPos
+    #    if (GetCreeper(<pathPos.x <pathPos.y) gt0)
+    #        false return
+    #    endif
+    #loop
+
+    if (GetCreeper(<pos.x <pos.y) gt0) true return endif
+
+    <shipData{GetName(<thisUnit)} >ship
+    V2 (
+        <pos.x dup <-*CREEPER_CHUNK_SIZE mod -
+        <pos.y dup <-*CREEPER_CHUNK_SIZE mod -
+    ) >currentCell
+
+    <ship{"maxDistance"} 1 + 0 do
+        if (ListContains(<-*frontlineCells[i] <currentCell))
+            false return
+        endif
+    loop
+
+    true
+
+:IsValidPosition
+    # @IsValidPosition(<pos <ship <unit) >isValid
+    >unit >ship >pos
+
+    # Is valid path to apex
     GetRaPath(GetApex <pos) >path
     if (GetListCount(<path) eq0) false return endif
 
+    # Alternative to RA system, but has worse performance when needed (16ms vs 1ms)
+    #if (IsPassable(GetPosition(GetApex) <pos V4(0 0 512 512) false) !) false return endif
+
+    # Path does not intersect with creeper
     <path 0 do
         <path[i] >pathPos
         if (GetCreeper(<pathPos.x <pathPos.y) gt0)
@@ -217,14 +249,27 @@ endif
     loop
 
     @GetRectVertices(<pos <ship{"scale"}) >newRect
-    <unitRects 0 do
-        if (<newRect <unitRects[i] !=)
-            if (@IsOverlapping(<newRect <unitRects[i]))
+
+    # Unit in map bounds
+    if (
+        <newRect.0 lt0
+        <newRect.1 lt0 ||
+        <newRect.2 512 > ||
+        <newRect.3 512 > ||
+    )
+        false return
+    endif
+
+    # Not overlapping with other units
+    <allUnits 0 do
+        if (<unit <allUnits[i] !=)
+            if (@IsOverlapping(<newRect <unitRects{<allUnits[i]}))
                 false return
             endif
         endif
     loop
 
+    # Area is clear of blocking sands
     GetSandInArea(<newRect false <blockingSands true) GetListCount >sandCount
     if (<sandCount neq0) false return endif
 

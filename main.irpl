@@ -1,13 +1,12 @@
 :Once
     RegisterForMsg("BuildShip" dup)
+    @GameLoaded
 
     31 0 # ore
     32 0 # redon
     33 0 # greenar
     34 0 # spectrite
     4 TableN ->*rts_materials
-
-    RegisterScript("main")
 
     "reactor"
         "name" "Reactor"
@@ -27,6 +26,26 @@
         "costOre" 100
         "costRedon" 0
         "costGreenar" 25
+        "costSpectrite" 0
+        8 TableN
+    "focusBeacon"
+        "name" "Focus Beacon"
+        "tooltip" "A beacon that attracts ships towards it in a small area."
+        "image" "/rts/units/beacon/body.png"
+        "ship" "/rts/units/beacon/beacon"
+        "costOre" 100
+        "costRedon" 25
+        "costGreenar" 0
+        "costSpectrite" 0
+        8 TableN
+    "bertha"
+        "name" "Bertha"
+        "tooltip" "A large ship that fires powerful projectiles to anywhere on the map. Costs 200 energy and 20 ore to fire."
+        "image" "/rts/images/forge/bertha.png"
+        "ship" "/rts/units/bertha/bertha"
+        "costOre" 500
+        "costRedon" 300
+        "costGreenar" 50
         "costSpectrite" 0
         8 TableN
     "cryon"
@@ -89,7 +108,20 @@
         "costGreenar" 0
         "costSpectrite" 0
         8 TableN
+    "shieldFactory"
+        "name" "Shield Factory"
+        "tooltip" "A factory that produces Shields, which repel creeper in a range around them. Default 2 units."
+        "image" "/rts/images/forge/shieldFactory.png"
+        "ship" "/rts/factories/shield/shield"
+        "costOre" 450
+        "costRedon" 0
+        "costGreenar" 200
+        "costSpectrite" 0
+        8 TableN
     Table ->*rts_buildOptions
+
+:GameLoaded
+    RegisterScript("main")
 
 :BuildShip
     <-*rts_buildOptions{<_DATA{"name"}} >ship

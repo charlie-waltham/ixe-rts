@@ -1,0 +1,4 @@
+:Awake
+    SetShowRange(self GetRegisteredScriptVar("frontline" "BEACON_RANGE"))
+    SetShowRangeColor(self V4(1 0 0 1))
+    DefaultConfig(self "beaconEnable" true)

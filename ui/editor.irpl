@@ -8,13 +8,17 @@ if (GetEditMode)
 
     if (GetTimer0 eq0)
         GetUnitsByName("/rts/units/fissure/fissure") >fissures
-        31 0 32 0 33 0 34 0 4 TableN >resources
+        31 0 32 0 33 0 34 0 4 TableN dup >resources Copy >regen
         <fissures 0 do
             GetScript1Var(<fissures[i] "resource") >resource
             <resources{<resource} GetScript1Var(<fissures[i] "amount") + >resources{<resource}
+            <regen{<resource} GetScript1Var(<fissures[i] "regen_per_min") + >regen{<resource}
         loop
 
-        <resources{31} @Fmt " ORE<br>" <resources{32} @Fmt " REDON<br>" <resources{33} @Fmt " GREENAR<br>" <resources{34} @Fmt " SPECTRITE"
+        <resources{31} @Fmt " (" <regen{31} @Fmt "/min) ORE<br>"
+        <resources{32} @Fmt " (" <regen{32} @Fmt "/min) REDON<br>"
+        <resources{33} @Fmt " (" <regen{33} @Fmt "/min) GREENAR<br>"
+        <resources{34} @Fmt " (" <regen{34} @Fmt "/min) SPECTRITE<br>"
         @ConcatAll >uiTable{"resourceCounter"}
 
         SetTimer0(<RESOURCE_COUNT_DELAY)

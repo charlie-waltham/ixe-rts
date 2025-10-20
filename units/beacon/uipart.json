@@ -1,0 +1,20 @@
+{
+	"type": "part",
+	"position": [0, 0],
+	"pivot": [0.5, 0.5],
+	"image": "/rts/images/dummy.png",
+	"configui": {
+		"title": {
+			"name": "beacon_title",
+			"text": "Focus Beacon",
+			"textalignment": "Center",
+			"bgcolor": "#CFB161FF",
+			"tooltip": "Focus Beacon"
+		},
+		"width": 150,
+		"Components": [
+			{ "type":"text", "pos": [4,30], "text": "ON" },
+			{ "type":"toggle", "pos": [32,30], "name":"beaconEnable", "tooltip": "ON/OFF" }
+		]
+	}
+}

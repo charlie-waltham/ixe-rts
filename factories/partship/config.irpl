@@ -1,134 +1,111 @@
 $unit_type:"$/particulateship/particulateship"
-$max_units:2
 
 :Upgrades
-    # 0
-    "name" "Root"
-    "tier" 0
-    "costOre" 0
-    "costRedon" 0
-    "costGreenar" 0
-    "costSpectrite" 0
-    "unitFunction" null
-    "onceFunction" null
-    "description" "Root node"
-    "position" V2(224 250)
-    "prerequisite" null
-    11 TableN
 
-    # 1
+    # 0
     "name" "Additional Part Ship"
     "tier" 1
     "costOre" 200
     "costRedon" 0
     "costGreenar" 0
     "costSpectrite" 0
-    "unitFunction" null
-    "onceFunction" "AddPartShip"
+    "attribs" "max_units|+|1"
     "description" "+1 Part Ship"
     "position" V2(224 330)
-    "prerequisite" 0
-    11 TableN
+    "prerequisite" null
+    10 TableN
 
-    # 2
+    # 1
     "name" "Additional Part Ship"
     "tier" 2
     "costOre" 400
     "costRedon" 150
     "costGreenar" 0
     "costSpectrite" 0
-    "unitFunction" null
-    "onceFunction" "AddPartShip"
+    "attribs" "max_units|+|1"
     "description" "+1 Part Ship"
     "position" V2(224 410)
-    "prerequisite" 1
-    11 TableN
+    "prerequisite" 0
+    10 TableN
 
-    # 3
+    # 2
     "name" "Additional Part Ship"
     "tier" 3
     "costOre" 800
     "costRedon" 300
     "costGreenar" 0
     "costSpectrite" 0
-    "unitFunction" null
-    "onceFunction" "AddPartShip"
+    "attribs" "max_units|+|1"
     "description" "+1 Part Ship"
     "position" V2(224 490)
-    "prerequisite" 2
-    11 TableN
+    "prerequisite" 1
+    10 TableN
 
-    # 4
+    # 3
     "name" "Particulate Nullification Field"
     "tier" 4
     "costOre" 800
-    "costRedon" 0
-    "costGreenar" 0
-    "costSpectrite" 400
-    "unitFunction" null
-    "onceFunction" "NullField"
-    "description" "Immediately nullify all particulate emitters on the map"
+    "costRedon" 100
+    "costGreenar" 100
+    "costSpectrite" 600
+    "attribs" "null_field|=|1"
+    "description" "Immediately nullify all particulate emitters on the map<br>(Non-refundable)"
     "position" V2(224 570)
     "prerequisite" 2
+    "noRefund" 1
     11 TableN
 
     List
 
-:AddPartShip
-    @Get("max_units") 1 + @Set("max_units")
+:DefaultAttributes
+    # @DefaultAttributes >attribs
+    # Returns a table of attributes and their default values.
 
-:NullField
-    GetUnitsByName("$/particulateemitter/particulateemitter") >pEmitters
-    <pEmitters 0 do
-        Destroy(<pEmitters[i] true)
-    loop
+    "max_units" 2 # Required on all factories
+    "null_field" 0
+    Table
+
+:ApplyAttributes
+    # @ApplyAttributes
+    # Apply attributes to all units.
+    # _DATA = {"units": list, "attribs": table}
+
+    <_DATA{"units"} >units
+    <_DATA{"attribs"} >attribs
+
+    # Singular attribs
+    if (TableContainsKey(<attribs "max_units"))
+        <attribs{"max_units"} @Set("max_units")
+    endif
+    if (TableContainsKey(<attribs "null_field"))
+        if (<attribs{"null_field"} 1 ==)
+            GetUnitsByName("$/particulateemitter/particulateemitter") >pEmitters
+            <pEmitters 0 do
+                Destroy(<pEmitters[i] true)
+            loop
+        endif
+    endif
+
+:PredictDPS
+    # @PredictDPS
+    # Return a predicted DPS for the given attribs.
+    # <_DATA is a table of attribs like @DefaultAttributes.
+
+    30.0 10 GetUpgradeBoost - / <_DATA{"max_units"} * @Set("dps")
 
 # IGNORE BELOW
 
 :Once
-    @Upgrades >upgrades
-    <upgrades @Set("upgrades")
-    <unit_type @Set("unit_type")
-    <max_units @Set("max_units")
-    RegisterForMsg("Upgrade" self 1 - Concat "Upgrade")
-    RegisterForMsg("ApplyUpgrades" self 1 - Concat "ApplyUpgrades")
+    @Upgrades          @Set("upgrades")
+    @DefaultAttributes @Set("attribs")
+    <unit_type         @Set("unit_type")
 
-:Upgrade
-    # @Upgrade
-    # Apply new upgrade to all current units
+    RegisterForMsg("ApplyAttributes"      self 1 - Concat "ApplyAttributes")
+    RegisterForMsg("PredictDPS"           self 1 - Concat "PredictDPS")
+    RegisterForMsg("SetDefaultAttributes" self 1 - Concat "SetDefaultAttributes")
 
-    <_DATA{"tier"} <maxTier max >maxTier
-
-    <_DATA{"onceFunction"} >onceFunction
-    if (<onceFunction IsNull !)
-        refcall(<onceFunction)
-    endif
-
-    <_DATA{"unitFunction"} >unitFunction
-    @Get("units") >units
-
-    <units 0 do
-        SetColor(<units[i] @Get("tierColours")[<maxTier])
-        if (<unitFunction IsNull !)
-            <units[i] refcall(<unitFunction)
-        endif
-    loop
-
-:ApplyUpgrades
-    # @ApplyUpgrades
-    # Apply all owned upgrades to a given unit
-
-    <_DATA >unit
-    @Get("ownedUpgrades") >ownedUpgrades
-    <ownedUpgrades 0 do
-        # Messy because I decided to store owned upgrades by index at some point
-        <upgrades[<ownedUpgrades[i]]{"unitFunction"} >unitFunction
-        if (<unitFunction IsNull !)
-            <unit refcall(<unitFunction)
-        endif
-
-        SetColor(<unit @Get("tierColours")[<maxTier])
-    loop
+:SetDefaultAttributes
+    @DefaultAttributes @Set("attribs")
 
 :Get
     >var

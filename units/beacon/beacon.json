@@ -1,0 +1,18 @@
+{
+	"type": "unit",
+	"displayname": "Focus Beacon",
+	"permanentinventory": true,
+	"image": "body.png",
+	"position": [0, 0],
+	"pivot": [0.5, 0.5],
+	"movable": true,
+	"controllers": 	[
+		{"name": "ondestroy_sandexplosion"}
+	],
+	"parts": [
+		{"part": "uipart.json"}
+	],
+	"scripts": [
+		{"name": "script.irpl"}
+	]
+}

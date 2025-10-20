@@ -3,228 +3,244 @@ $max_units:2
 
 :Upgrades
     # 0
-    "name" "Root"
-    "tier" 0
-    "costOre" 0
-    "costRedon" 0
-    "costGreenar" 0
-    "costSpectrite" 0
-    "unitFunction" null
-    "onceFunction" null
-    "description" "Root node"
-    "position" V2(224 250)
-    "prerequisite" null
-    11 TableN
-
-    # 1
     "name" "Increased Rocket Firerate"
     "tier" 1
     "costOre" 200
     "costRedon" 0
     "costGreenar" 0
     "costSpectrite" 0
-    "unitFunction" "IncreasedRocketFirerate"
-    "onceFunction" null
+    "attribs" "rocket_fire_delay|-|15"
     "description" "-0.5s rocket fire delay"
-    "position" V2(224 330)
-    "prerequisite" 0
-    11 TableN
+    "position" V2(224 250)
+    "prerequisite" null
+    10 TableN
 
-    # 2
+    # 1
     "name" "Efficient Rocket Engines"
     "tier" 2
     "costOre" 200
     "costRedon" 50
     "costGreenar" 200
     "costSpectrite" 0
-    "unitFunction" "EffRockets"
-    "onceFunction" null
+    "attribs" "rocket_fire_cost|/|2"
     "description" "-50% rocket energy use"
-    "position" V2(176 410)
-    "prerequisite" 1
-    11 TableN
+    "position" V2(176 330)
+    "prerequisite" 0
+    10 TableN
 
-    # 3
+    # 2
     "name" "Increased Rocket Range"
     "tier" 2
     "costOre" 300
     "costRedon" 150
     "costGreenar" 0
     "costSpectrite" 0
-    "unitFunction" "IncreasedRocketRange"
-    "onceFunction" null
+    "attribs" "rocket_fire_range|+|40"
     "description" "+40 Rocket Range"
-    "position" V2(272 410)
-    "prerequisite" 1
-    11 TableN
+    "position" V2(272 330)
+    "prerequisite" 0
+    10 TableN
 
-    # 4
+    # 3
     "name" "Additional Gunship"
     "tier" 3
     "costOre" 500
     "costRedon" 100
     "costGreenar" 0
     "costSpectrite" 0
-    "unitFunction" null
-    "onceFunction" "AddGunship"
+    "attribs" "max_units|+|1"
     "description" "+1 max Gunships"
-    "position" V2(176 490)
-    "prerequisite" 2
-    11 TableN
+    "position" V2(176 410)
+    "prerequisite" 1
+    10 TableN
 
-    # 5
+    # 4
     "name" "Increased Cannon Firerate"
     "tier" 3
     "costOre" 200
     "costRedon" 300
     "costGreenar" 0
     "costSpectrite" 25
-    "unitFunction" "IncreasedCannonFirerate"
-    "onceFunction" null
-    "description" "-0.03s cannon fire delay"
-    "position" V2(272 490)
-    "prerequisite" 3
-    11 TableN
+    "attribs" "cannon_fire_delay|-|2"
+    "description" "-0.06s cannon fire delay"
+    "position" V2(272 410)
+    "prerequisite" 2
+    10 TableN
 
-    # 6
+    # 5
     "name" "Sulf-Sufficiency"
     "tier" 4
     "costOre" 400
     "costRedon" 0
     "costGreenar" 500
     "costSpectrite" 100
-    "unitFunction" "SelfSufficiency"
-    "onceFunction" null
+    "attribs" "cannon_fire_cost|=|0 & rocket_fire_cost|=|0"
     "description" "-100% energy use (cannon and rocket)"
-    "position" V2(176 570)
-    "prerequisite" 4
-    11 TableN
+    "position" V2(176 490)
+    "prerequisite" 3
+    10 TableN
 
-    # 7
+    # 6
     "name" "Additional Gunship"
     "tier" 4
     "costOre" 750
     "costRedon" 100
     "costGreenar" 0
     "costSpectrite" 200
-    "unitFunction" null
-    "onceFunction" "AddGunship"
+    "attribs" "max_units|+|1"
     "description" "+1 max Gunships"
-    "position" V2(272 570)
-    "prerequisite" 5
-    11 TableN
+    "position" V2(272 490)
+    "prerequisite" 4
+    10 TableN
+
+    # 7
+    "name" "Gunship Mastery"
+    "tier" 5
+    "costOre" 1000
+    "costRedon" 300
+    "costGreenar" 200
+    "costSpectrite" 300
+    "attribs" "overlap|=|1 & rocket_fire_delay|-|30"
+    "description" "ALL Gunships can <color=#FFD166>overlap other units<color=#fff><br>-1s rocket fire delay"
+    "position" V2(224 570)
+    "prerequisite" 5 6 2 ListN
+    10 TableN
 
     List
 
-:SelfSufficiency
-    >unit
-    SetUnitProperty(<unit "autoammo" 3)
+:DefaultAttributes
+    # @DefaultAttributes >attribs
+    # Returns a table of attributes and their default values.
 
-:IncreasedRocketRange
-    >unit
-    GetChildren(<-unit) ->parts
-    <-parts 0 do
-        if (GetPartData(<-parts[i]){"name"} "$/weapon_rocket/weapon_rocket.json" ==)
-            GetScript1Var(<parts[i] "FIRE_RANGE") >range
-            # Sometimes it fails to read at unpredictable times
-            if (IsNull(<range)) 75 >range endif
-            SetScript1Var(<parts[i] "FIRE_RANGE" <range 40 +)
+    "max_units" 2 # Required on all factories
+    "cannon_fire_delay" 10
+    "cannon_fire_cost" 0.1
+    "rocket_fire_delay" 100
+    "rocket_fire_range" 75
+    "rocket_fire_cost" 0.5
+    "overlap" 0
+    Table
+
+:ApplyAttributes
+    # @ApplyAttributes
+    # Apply attributes to all units.
+    # _DATA = {"units": list, "attribs": table}
+
+    <_DATA{"units"} >units
+    <_DATA{"attribs"} >attribs
+
+    # Singular attribs
+    if (TableContainsKey(<attribs "max_units"))
+        <attribs{"max_units"} @Set("max_units")
+    endif
+    if (TableContainsKey(<attribs "overlap"))
+        GetRegisteredScriptVar("unitcontrol" "shipData") >shipData
+        GetRegisteredScriptVar("unitcontrol" "ugpradedShipData") >upgradedShipData
+
+        if (<attribs{"overlap"} 1 ==)
+            SetTableElement(<shipData{"$/gunship/gunship"} "scale" V2(1 1))
+            SetTableElement(<upgradedShipData{"$/gunship/gunship"} "scale" V2(1 1))
+        else
+            SetTableElement(<shipData{"$/gunship/gunship"} "scale" V2(16 11))
+            SetTableElement(<upgradedShipData{"$/gunship/gunship"} "scale" V2(16 11))
+        endif
+    endif
+
+    # Per-unit attribs
+    GetTableKeys(<attribs) >keys
+    <keys 0 do
+        <keys[i] >attrib
+        <units 0 do
+            switch
+                case (<attrib "cannon_fire_delay" ==)
+                    @SetControllerArgOnAllParts(<units[i] "$/weapon_cannon/weapon_cannon.json" "cannon" "fire_delay" <attribs{<attrib})
+                endcase
+                case (<attrib "cannon_fire_cost" ==)
+                    @SetControllerArgOnAllParts(<units[i] "$/weapon_cannon/weapon_cannon.json" "cannon" "fire_cost" <attribs{<attrib})
+                endcase
+                case (<attrib "rocket_fire_delay" ==)
+                    @SetScriptVarOnAllParts(<units[i] "$/weapon_rocket/weapon_rocket.json" "FIRE_DELAY" <attribs{<attrib})
+                endcase
+                case (<attrib "rocket_fire_range" ==)
+                    @SetScriptVarOnAllParts(<units[i] "$/weapon_rocket/weapon_rocket.json" "FIRE_RANGE" <attribs{<attrib})
+                endcase
+                case (<attrib "rocket_fire_cost" ==)
+                    @SetScriptVarOnAllParts(<units[i] "$/weapon_rocket/weapon_rocket.json" "FIRE_COST" <attribs{<attrib})
+                endcase
+            endswitch
+        loop
+    loop
+
+:SetScriptVarOnAllParts
+    # @SetScriptVarOnAllParts(<unit <partName <var <value)
+    # Helper function for @ApplyAttributes.
+
+    >value >var >partName >unit
+
+    GetChildren(<unit) >parts
+    <parts 0 do
+        if (GetPartData(<parts[i]{"name"}) <partName ==)
+            SetScript1Var(<parts[i] <var <value)
         endif
     loop
 
-:IncreasedRadius
-    >unit
-    GetChildren(<-unit) ->parts
-    <-parts 0 do
-        if (GetPartData(<-parts[i]){"name"} "$/weapon_cannon/weapon_cannon.json" ==)
-            GetControllerArg2(<parts[i] 0 "shot_damage_distance") >radius
-            if (IsNull(<radius)) 8 >radius endif
-            SetControllerArg2(<parts[i] 0 "shot_damage_distance" <radius 3 +)
+:SetControllerArgOnAllParts
+    # @SetControllerArgOnAllParts(<unit <partName <controllerName <arg <value)
+    # Helper function for @ApplyAttributes.
+
+    >value >arg >controllerName >partName >unit
+
+    GetChildren(<unit) >parts
+    <parts 0 do
+        if (GetPartData(<parts[i]{"name"}) <partName ==)
+            SetControllerArg(<parts[i] <controllerName <arg <value)
         endif
     loop
 
-:IncreasedRocketFirerate
-    >unit
-    GetChildren(<-unit) ->parts
-    <-parts 0 do
-        if (GetPartData(<-parts[i]){"name"} "$/weapon_rocket/weapon_rocket.json" ==)
-            GetScript1Var(<parts[i] "FIRE_DELAY") >delay
-            if (IsNull(<delay)) 100 >delay endif
-            SetScript1Var(<parts[i] "FIRE_DELAY" max(30 <delay 15 -))
-        endif
-    loop
+:PredictDPS
+    # @PredictDPS
+    # Return a predicted DPS for the given attribs.
+    # <_DATA is a table of attribs like @DefaultAttributes.
 
-:IncreasedCannonFirerate
-    >unit
-    GetChildren(<-unit) ->parts
-    <-parts 0 do
-        if (GetPartData(<-parts[i]){"name"} "$/weapon_cannon/weapon_cannon.json" ==)
-            GetControllerArg2(<parts[i] 0 "fire_delay") >delay
-            if (IsNull(<delay)) 10 >delay endif
-            SetControllerArg2(<parts[i] 0 "fire_delay" <delay 1 -)
-        endif
-    loop
+    1 >numCannons
+    1 >numRockets
+    7 7 PI * * asint >rocketTiles
 
-:EffRockets
-    >unit
-    GetChildren(<-unit) ->parts
-    <-parts 0 do
-        if (GetPartData(<-parts[i]){"name"} "$/weapon_rocket/weapon_rocket.json" ==)
-            GetScript1Var(<parts[i] "FIRE_COST") >cost
-            if (IsNull(<cost)) 0.5 >cost endif
-            SetScript1Var(<parts[i] "FIRE_COST" <cost 2.0 /)
-        endif
-    loop
+    if (TableContainsKey(<_DATA "depth")) <_DATA{"depth"}
+    else 2147483647
+    endif >depth
 
-:AddGunship
-    @Get("max_units") 1 + @Set("max_units")
+    18 >count
+    2 <depth min >damage
+    <_DATA{"cannon_fire_delay"} GetUpgradeBoost - 30.0 / >rate
+    <count <damage * <rate / <numCannons * >cannonDps
+
+    <_DATA{"rocket_fire_delay"} GetUpgradeBoost 6 * - 30.0 / >rate
+    40 <depth min >damage
+    <damage <rocketTiles * <rate / <numRockets * >rocketDps
+
+    <cannonDps <rocketDps + <_DATA{"max_units"} * @Set("dps")
+
+:Destroyed
+    # Undo overlap modifier when destroyed
+    "units" @Get("units")
+    "overlap" 0 1 TableN
+    2 TableN >_DATA
+    @ApplyAttributes
 
 # IGNORE BELOW
 
 :Once
-    @Upgrades >upgrades
-    <upgrades @Set("upgrades")
-    <unit_type @Set("unit_type")
-    <max_units @Set("max_units")
-    RegisterForMsg("Upgrade" self 1 - Concat "Upgrade")
-    RegisterForMsg("ApplyUpgrades" self 1 - Concat "ApplyUpgrades")
+    @Upgrades          @Set("upgrades")
+    @DefaultAttributes @Set("attribs")
+    <unit_type         @Set("unit_type")
 
-:Upgrade
-    # @Upgrade
-    # Apply new upgrade to all current units
+    RegisterForMsg("ApplyAttributes"      self 1 - Concat "ApplyAttributes")
+    RegisterForMsg("PredictDPS"           self 1 - Concat "PredictDPS")
+    RegisterForMsg("SetDefaultAttributes" self 1 - Concat "SetDefaultAttributes")
 
-    <_DATA{"tier"} <maxTier max >maxTier
-
-    <_DATA{"onceFunction"} >onceFunction
-    if (<onceFunction IsNull !)
-        refcall(<onceFunction)
-    endif
-
-    <_DATA{"unitFunction"} >unitFunction
-    @Get("units") >units
-
-    <units 0 do
-        SetColor(<units[i] @Get("tierColours")[<maxTier])
-        if (<unitFunction IsNull !)
-            <units[i] refcall(<unitFunction)
-        endif
-    loop
-
-:ApplyUpgrades
-    # @ApplyUpgrades
-    # Apply all owned upgrades to a given unit
-
-    <_DATA >unit
-    @Get("ownedUpgrades") >ownedUpgrades
-    <ownedUpgrades 0 do
-        # Messy because I decided to store owned upgrades by index at some point
-        <upgrades[<ownedUpgrades[i]]{"unitFunction"} >unitFunction
-        if (<unitFunction IsNull !)
-            <unit refcall(<unitFunction)
-        endif
-
-        SetColor(<unit @Get("tierColours")[<maxTier])
-    loop
+:SetDefaultAttributes
+    @DefaultAttributes @Set("attribs")
 
 :Get
     >var

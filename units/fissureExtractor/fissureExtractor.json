@@ -9,7 +9,8 @@
 	"maxammo": 30,
 	"ammorequesttime": 6,
 	"parts": [
-		{ "part": "uipart.json" }
+		{ "part": "uipart.json" },
+		{ "part": "drill.json", "active": false }
 	],
 	"controllers": [
 		{ "name": "ondestroy_sandexplosion" }

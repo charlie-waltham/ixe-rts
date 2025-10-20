@@ -1,10 +1,11 @@
 $CREEPER_CHUNK_SIZE:8
 $FRONTLINE_SIZE:8
 $DELAY:5
+$BEACON_RANGE:32
 
 if (GetTimer0 eq0)
     @FindFrontlines
-    SetTimer0(<DELAY)
+    if (GetTimer1 eq0) <DELAY else 0 endif SetTimer0
 endif
 
 :Once
@@ -12,7 +13,7 @@ endif
     <CREEPER_CHUNK_SIZE dup * >sqrChunkSize
     512 <CREEPER_CHUNK_SIZE / >numChunks
     0 >currentRow
-    CreateList >sprites
+    <BEACON_RANGE dup * >sqrBeaconRange
     <FRONTLINE_SIZE 0 do CreateList loop List ->*frontlineCells
     false >debugFrontline
     
@@ -39,11 +40,14 @@ endif
     loop
     List >losUnits
 
+    RegisterForMsg("ResetShips" dup)
     RegisterForMsg("DebugFrontline" dup)
     
     SetTimer0(<DELAY)
     SetTimerObeyPause0(true)
+    @GameLoaded
 
+:GameLoaded
     RegisterScript("frontline")
 
 :FindFrontlines
@@ -58,17 +62,35 @@ endif
         loop
     loop
 
-    if (<currentRow eq0)
-        <sprites 0 do DestroySprite(<sprites[i]) loop
-    endif
+    GetUnitsByName("/rts/units/beacon/beacon") >beacons
+    <beacons 0 do
+        if (ReadConfig(<beacons[i] "beaconEnable"))
+            GetPosition(<beacons[i])
+        endif
+    loop
+    List >beaconPositions
 
     <numChunks 0 do
-        GetNearestCreeper(<losUnits[i] false) >nearestCreeper
-        GetLos(<losUnits[i] <nearestCreeper.x <nearestCreeper.y) >los
-        # Update position of los dummy now as position takes a frame to update
-        SetPosition(<losUnits[i] V2(<currentRow 1 + i) <CREEPER_CHUNK_SIZE * <CREEPER_CHUNK_SIZE 2 / +)
+        V2(<currentRow 1 + i) <CREEPER_CHUNK_SIZE * >chunkPos
 
-        if (<los)
+        false >inBeaconRange
+        <beaconPositions 0 do
+            SqrMagnitude(<chunkPos <beaconPositions[i] -) >sqrMag
+            if (SqrMagnitude(<chunkPos <beaconPositions[i] -) <sqrBeaconRange lte)
+                true >inBeaconRange
+                break
+            endif
+        loop
+
+        false >los
+        if (<inBeaconRange !)
+            GetNearestCreeper(<losUnits[i] false) >nearestCreeper
+            GetLos(<losUnits[i] <nearestCreeper.x <nearestCreeper.y) >los
+            # Update position of los dummy now as position takes a frame to update
+            SetPosition(<losUnits[i] <chunkPos <CREEPER_CHUNK_SIZE 2 / +)
+        endif
+
+        if (<los <inBeaconRange ||)
             # Gets the area of the chunk, equal to (x, y) * chunkSize, (x,y) * chunkSize + chunkSize
             V4(
                 <currentRow <CREEPER_CHUNK_SIZE * i <CREEPER_CHUNK_SIZE *
@@ -80,13 +102,18 @@ endif
             if (GetSandInArea(<area false <blockingSands true) GetListCount <sqrChunkSize lt # Cell is not 100% sand
                 GetCreeperInArea(<area false false) eq0 &&) # Creeper in cell is 0
 
-                <FRONTLINE_SIZE 1 + 1 do
-                    # Creeper in cells around this cell is not 0
-                    if (GetCreeperInArea(<area <areaScaler i * + false false) gt0)
-                        i >distance
-                        break
-                    endif
-                loop
+                # Set distance to 1 if in range of beacon
+                if (<inBeaconRange)
+                    1 >distance
+                else
+                    <FRONTLINE_SIZE 1 + 1 do
+                        # Creeper in cells around this cell is not 0
+                        if (GetCreeperInArea(<area <areaScaler i * + false false) gt0)
+                            i >distance
+                            break
+                        endif
+                    loop
+                endif
             endif
 
             if (<distance neq0)
@@ -95,20 +122,29 @@ endif
                 AppendToList(<-*frontlineCells[<distance 1 -] V2(<area.x <area.y))
 
                 if (<debugFrontline)
-                    @DebugSprite("/rts/images/square.png" 
-                        Vector0
-                        <area
-                        V2(<CREEPER_CHUNK_SIZE 2 * dup)
-                        V4(0 0 1 <distance 1 - <FRONTLINE_SIZE asfloat / - 0.5)
-                    ) >sprite
-                    AppendToList(<sprites <sprite)
+                    <sprites[i][<currentRow] >sprite
+                    <distance 1 - <FRONTLINE_SIZE asfloat / >colour
+                    SetSpriteColor(<sprite V4(0 <colour 1 <colour - 0.8))
+                    SetSpriteActive(<sprite true)
                 endif
+            else
+                if (<debugFrontline)
+                    SetSpriteActive(<sprites[i][<currentRow] false)
+                endif
+            endif
+        else
+            if (<debugFrontline)
+                SetSpriteActive(<sprites[i][<currentRow] false)
             endif
         endif
     loop
 
     # Increment row or loop back to 0
     <currentRow 1 + <numChunks mod >currentRow
+
+:ResetShips
+    SetTimer0(0)
+    SetTimer1(<numChunks)
 
 :DebugSprite
     # @DebugSprite(<image <origin <position <scale <color) >sprite
@@ -122,3 +158,27 @@ endif
 
 :DebugFrontline
     <_DATA{"data"}{"frontlineToggle"} >debugFrontline
+
+    if (<debugFrontline)
+        <numChunks 0 do
+            <numChunks 0 do
+                @DebugSprite("/rts/images/square.png" 
+                    Vector0
+                    V2(i <CREEPER_CHUNK_SIZE * j <CREEPER_CHUNK_SIZE *)
+                    V2(<CREEPER_CHUNK_SIZE 2 * dup)
+                    Vector0
+                )
+                dup false SetSpriteActive
+            loop
+            <numChunks ListN
+        loop
+        List >sprites
+    else
+        <sprites 0 do
+            <sprites[i] 0 do
+                DestroySprite(<sprites[i][j])
+            loop
+        loop
+
+        --sprites
+    endif

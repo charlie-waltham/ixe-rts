@@ -1,15 +1,12 @@
 $resource:31
+$amount_cap:500
 $amount:500
 $extract_cost:0.5
+$regen_per_min:10
 $erupt_delay:60
 
 if (GetTimer0 eq0)
     GetPosition(self) >pos
-
-    if (<amount lte0)
-        SetColor(self V4(0.4 0.4 0.4 1))
-        return
-    endif
 
     CreateSandExplosion(
         <pos.x <pos.y 2 +
@@ -21,6 +18,11 @@ if (GetTimer0 eq0)
     )
 
     SetTimer0(<erupt_delay)
+endif
+
+if (GetTimer1 eq0 <amount <amount_cap < &&)
+    <amount 1 + <amount_cap min >amount
+    SetTimer1(1800 <regen_per_min /)
 endif
 
 :BuildExtractor
@@ -41,7 +43,12 @@ endif
     if (GetGameTickCount 10 % neq0) return endif
 
     GetMouseCell >mousePos
+    GetPosition(self) >pos
     @GetRectVertices(<pos <size) >rect
+
+    if (<overlapping)
+        SendMsg("UpdateFissureUI" null)
+    endif
 
     if (@IsOverlapping(<mousePos <rect))
         if (<overlapping !)
@@ -61,7 +68,7 @@ endif
         SetColor(self <sandDef{"color"})
     endif
 
-:Awake
+:Once
     RegisterForMsg("MSG_FrameAdvance" "FrameAdvance")
     RegisterForMsg("BuildExtractor" dup)
 
@@ -73,11 +80,7 @@ endif
     SetColor(self <sandDef{"color"})
 
     SetTimer0(<erupt_delay)
-
-:Once
-    if (GetEditMode)
-        @Awake
-    endif
+    SetTimer1(1800 <regen_per_min /)
 
 :Destroyed
     SendMsg("DestroyFissureUI" null)

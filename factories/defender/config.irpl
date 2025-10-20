@@ -1,205 +1,209 @@
 $unit_type:"$/defender/defender"
-$max_units:3
 
 :Upgrades
-    # 0
-    "name" "Root"
-    "tier" 0
-    "costOre" 0
-    "costRedon" 0
-    "costGreenar" 0
-    "costSpectrite" 0
-    "unitFunction" null
-    "onceFunction" null
-    "description" "Root node"
-    "position" V2(224 250)
-    "prerequisite" null
-    11 TableN
+    # @Upgrades >upgrades
+    # Defines the factory's upgrade table.
 
-    # 1
+    # 0
     "name" "Increased Damage Radius"
     "tier" 1
     "costOre" 200
     "costRedon" 0
     "costGreenar" 0
     "costSpectrite" 0
-    "unitFunction" "IncreasedRadius"
-    "onceFunction" null
+    "attribs" "shot_damage_distance|+|1 & shot_damage_count|+|8"
     "description" "+2 Creeper damage radius"
-    "position" V2(224 330)
-    "prerequisite" 0
-    11 TableN
+    "position" V2(224 250)
+    "prerequisite" null
+    10 TableN
 
-    # 2
+    # 1
     "name" "Additional Defender"
     "tier" 2
     "costOre" 400
     "costRedon" 0
     "costGreenar" 0
     "costSpectrite" 0
-    "unitFunction" null
-    "onceFunction" "AddDefender"
+    "attribs" "max_units|+|1"
     "description" "+1 max Defenders"
-    "position" V2(176 410)
-    "prerequisite" 1
-    11 TableN
+    "position" V2(176 330)
+    "prerequisite" 0
+    10 TableN
 
-    # 3
+    # 2
     "name" "Efficient Weaponry"
     "tier" 2
     "costOre" 50
     "costRedon" 0
     "costGreenar" 200
     "costSpectrite" 0
-    "unitFunction" "EffWeaponry"
-    "onceFunction" null
-    "description" "50% reduced energy use"
-    "position" V2(272 410)
-    "prerequisite" 1
-    11 TableN
+    "attribs" "fire_cost|/|2"
+    "description" "50% reduced energy consumption"
+    "position" V2(272 330)
+    "prerequisite" 0
+    10 TableN
 
-    # 4
+    # 3
     "name" "High-Speed Projectiles"
     "tier" 3
     "costOre" 500
     "costRedon" 250
     "costGreenar" 0
     "costSpectrite" 25
-    "unitFunction" "SpeedProjectiles"
-    "onceFunction" null
-    "description" "+15 Creeper damage<br>+3 shot speed"
-    "position" V2(176 490)
-    "prerequisite" 2
-    11 TableN
+    "attribs" "shot_damage|-|2000000 & shot_speed|+|3"
+    "description" "+2 Creeper damage<br>+3 shot speed"
+    "position" V2(176 410)
+    "prerequisite" 1
+    10 TableN
 
-    # 5
+    # 4
     "name" "Increased Firerate"
     "tier" 3
     "costOre" 300
     "costRedon" 150
     "costGreenar" 50
     "costSpectrite" 25
-    "unitFunction" "IncreasedFirerate"
-    "onceFunction" null
+    "attribs" "fire_delay|-|3"
     "description" "-0.1s fire delay"
-    "position" V2(272 490)
-    "prerequisite" 3
-    11 TableN
+    "position" V2(272 410)
+    "prerequisite" 2
+    10 TableN
 
-    # 6
+    # 5
     "name" "Additional Defender"
     "tier" 4
     "costOre" 600
     "costRedon" 100
     "costGreenar" 0
     "costSpectrite" 0
-    "unitFunction" null
-    "onceFunction" "AddDefender"
+    "attribs" "max_units|+|1"
     "description" "+1 max Defenders"
-    "position" V2(272 570)
-    "prerequisite" 5
-    11 TableN
-
-    # 7
+    "position" V2(272 490)
+    "prerequisite" 4
+    10 TableN
+    
+    # 6
     "name" "Increased Damage Radius"
     "tier" 4
     "costOre" 500
     "costRedon" 300
     "costGreenar" 0
     "costSpectrite" 50
-    "unitFunction" "IncreasedRadius2"
-    "onceFunction" null
+    "attribs" "shot_damage_distance|+|2 & shot_damage_count|+|16"
     "description" "+4 Creeper damage radius"
-    "position" V2(176 570)
-    "prerequisite" 4
-    11 TableN
+    "position" V2(176 490)
+    "prerequisite" 3
+    10 TableN
+
+    # 7
+    "name" "Defender Mastery"
+    "tier" 5
+    "costOre" 1000
+    "costRedon" 300
+    "costGreenar" 200
+    "costSpectrite" 250
+    "attribs" "immortal|=|1 & fire_delay|-|1 & max_units|+|1"
+    "description" "Defenders become <color=#FFD166>immortal<color=#fff><br>-0.03s fire delay<br>+1 max Defenders"
+    "position" V2(224 570)
+    "prerequisite" 5 6 2 ListN
+    10 TableN
 
     List
 
-:IncreasedRadius
-    >unit
-    GetControllerArg(<unit "cannon" "shot_damage_distance") >radius
-    # Sometimes it fails to read at unpredictable times
-    if (IsNull(<radius)) 8 >radius endif
-    SetControllerArg(<unit "cannon" "shot_damage_distance" <radius 2 +)
+:DefaultAttributes
+    # @DefaultAttributes >attribs
+    # Returns a table of attributes and their default values.
 
-:IncreasedRadius2
-    >unit
-    GetControllerArg(<unit "cannon" "shot_damage_distance") >radius
-    # Sometimes it fails to read at unpredictable times
-    if (IsNull(<radius)) 10 >radius endif
-    SetControllerArg(<unit "cannon" "shot_damage_distance" <radius 4 +)
+    "max_units" 3 # Required on all factories
+    "shot_damage_count" 18
+    "shot_damage_distance" 8
+    "shot_damage" -2000000
+    "shot_speed" 3
+    "fire_delay" 10
+    "fire_cost" 0.1
+    "immortal" 0
+    Table
 
-:EffWeaponry
-    >unit
-    GetControllerArg(<unit "cannon" "fire_cost") >cost
-    if (IsNull(<cost)) 0.1 >cost endif
-    SetControllerArg(<unit "cannon" "fire_cost" <cost 2.0 /)
+:ApplyAttributes
+    # @ApplyAttributes
+    # Apply attributes to all units.
+    # _DATA = {"units": list, "attribs": table}
 
-:SpeedProjectiles
-    >unit
-    GetControllerArg(<unit "cannon" "shot_speed") >speed
-    GetControllerArg(<unit "cannon" "shot_damage") >damage
-    if (IsNull(<speed)) 2 >speed endif
-    if (IsNull(<damage)) -2000000 >damage endif
-    SetControllerArg(<unit "cannon" "shot_speed" <speed 3 +)
-    SetControllerArg(<unit "cannon" "shot_damage" <damage -150000000 +)
+    <_DATA{"units"} >units
+    <_DATA{"attribs"} >attribs
 
-:IncreasedFirerate
-    >unit
-    GetControllerArg(<unit "cannon" "fire_delay") >delay
-    if (IsNull(<delay)) 10 >delay endif
-    SetControllerArg(<unit "cannon" "fire_delay" <delay 3 -)
+    # Singular attribs
+    if (TableContainsKey(<attribs "max_units"))
+        <attribs{"max_units"} @Set("max_units")
+    endif
 
-:AddDefender
-    @Get("max_units") 1 + @Set("max_units")
+    # Per-unit attribs
+    GetTableKeys(<attribs) >keys
+    <keys 0 do
+        <keys[i] >attrib
+        <units 0 do
+            switch
+                case (<attrib "shot_damage_count" ==)
+                    SetControllerArg(<units[i] "cannon" "shot_damage_count" <attribs{<attrib})
+                endcase
+                case (<attrib "shot_damage_distance" ==)
+                    SetControllerArg(<units[i] "cannon" "shot_damage_distance" <attribs{<attrib})
+                endcase
+                case (<attrib "shot_damage" ==)
+                    SetControllerArg(<units[i] "cannon" "shot_damage" <attribs{<attrib})
+                endcase
+                case (<attrib "shot_speed" ==)
+                    SetControllerArg(<units[i] "cannon" "shot_speed" <attribs{<attrib})
+                endcase
+                case (<attrib "fire_delay" ==)
+                    SetControllerArg(<units[i] "cannon" "fire_delay" <attribs{<attrib})
+                endcase
+                case (<attrib "fire_cost" ==)
+                    SetControllerArg(<units[i] "cannon" "fire_cost" <attribs{<attrib})
+                endcase
+                case (<attrib "immortal" ==)
+                    SetUnitProperty(<units[i] "enemyignore" <attribs{<attrib} asint)
+                    SetPartProperty(<units[i] "creeperdamages" <attribs{<attrib} asint !)
+                    SetPartProperty(<units[i] "sanddamages" <attribs{<attrib} asint !)
+                    SetPartProperty(<units[i] "damagerate" <attribs{<attrib} asint ! 10000 *)
+
+                    # Need to make the cannon immortal too
+                    SetPartProperty(<units[i] 2 + "creeperdamages" <attribs{<attrib} asint !)
+                    SetPartProperty(<units[i] 2 + "sanddamages" <attribs{<attrib} asint !)
+                    SetPartProperty(<units[i] 2 + "damagerate" <attribs{<attrib} asint ! 10000 *)
+                endcase
+            endswitch
+        loop
+    loop
+
+:PredictDPS
+    # @PredictDPS
+    # Return a predicted DPS for the given attribs.
+    # <_DATA is a table of attribs like @DefaultAttributes.
+
+    if (TableContainsKey(<_DATA "depth")) <_DATA{"depth"}
+    else 2147483647
+    endif >depth
+
+    <_DATA{"shot_damage_count"} >count
+    <_DATA{"shot_damage"} -1000000 / <depth min >damage
+    <_DATA{"fire_delay"} GetUpgradeBoost - 30.0 / >rate
+
+    <count <damage * <rate / <_DATA{"max_units"} * @Set("dps")
 
 # IGNORE BELOW
 
 :Once
-    @Upgrades >upgrades
-    <upgrades @Set("upgrades")
-    <unit_type @Set("unit_type")
-    <max_units @Set("max_units")
-    RegisterForMsg("Upgrade" self 1 - Concat "Upgrade")
-    RegisterForMsg("ApplyUpgrades" self 1 - Concat "ApplyUpgrades")
+    @Upgrades          @Set("upgrades")
+    @DefaultAttributes @Set("attribs")
+    <unit_type         @Set("unit_type")
 
-:Upgrade
-    # @Upgrade
-    # Apply new upgrade to all current units
+    RegisterForMsg("ApplyAttributes"      self 1 - Concat "ApplyAttributes")
+    RegisterForMsg("PredictDPS"           self 1 - Concat "PredictDPS")
+    RegisterForMsg("SetDefaultAttributes" self 1 - Concat "SetDefaultAttributes")
 
-    <_DATA{"tier"} <maxTier max >maxTier
-
-    <_DATA{"onceFunction"} >onceFunction
-    if (<onceFunction IsNull !)
-        refcall(<onceFunction)
-    endif
-
-    <_DATA{"unitFunction"} >unitFunction
-    @Get("units") >units
-
-    <units 0 do
-        SetColor(<units[i] @Get("tierColours")[<maxTier])
-        if (<unitFunction IsNull !)
-            <units[i] refcall(<unitFunction)
-        endif
-    loop
-
-:ApplyUpgrades
-    # @ApplyUpgrades
-    # Apply all owned upgrades to a given unit
-
-    <_DATA >unit
-    @Get("ownedUpgrades") >ownedUpgrades
-    <ownedUpgrades 0 do
-        # Messy because I decided to store owned upgrades by index at some point
-        <upgrades[<ownedUpgrades[i]]{"unitFunction"} >unitFunction
-        if (<unitFunction IsNull !)
-            <unit refcall(<unitFunction)
-        endif
-
-        SetColor(<unit @Get("tierColours")[<maxTier])
-    loop
+:SetDefaultAttributes
+    @DefaultAttributes @Set("attribs")
 
 :Get
     >var

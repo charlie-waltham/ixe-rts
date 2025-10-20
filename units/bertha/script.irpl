@@ -1,0 +1,87 @@
+$damage:75
+$radius:40
+$ore_cost:20
+$shot_speed:10
+
+if (<shot -1 !=)
+    MoveTowards(GetPosition(<shot) <endPos <shot_speed) >newPos
+    SetPosition(<shot <newPos)
+    if (SqrMagnitude(<newPos <endPos -) 1 <)
+        DamageCreeper(<endPos.x <endPos.y 262144 <radius <damage -1000000 *)
+        PlaySound("retro_weapon_gun_misc_shot_04" 1)
+
+        Destroy(<shot false)
+        -1 >shot
+    endif
+endif
+
+Sys_Operable
+if (<target <nullVector ==) return endif
+
+RotateUnitTowards(<gun <target 3)
+
+if (<shot -1 !=) return endif
+if (GetAmmo(self) GetMaxAmmo(self) <) return endif
+if (<-*rts_materials{31} <ore_cost <) return endif
+
+ReadConfig(<gun "bertha_firemode") >mode
+if (<mode 1 == <mode 2 == ||)
+    GetPosition(self) >startPos
+    <target Copy >endPos
+
+    SetAmmo(self 0)
+    <-*rts_materials{31} <ore_cost - ->*rts_materials{31}
+    PlaySound("retro_weapon_gun_misc_shot_01" 1)
+
+    CreateUnit("/rts/units/bertha/shot" <startPos true) >shot
+    RotateUnitTowards(<shot <target 360)
+
+    if (<mode 1 ==)
+        WriteConfig(<gun "bertha_firemode" 0)
+    endif
+endif
+
+:FrameAdvance
+    if (<targeting)
+        SetSpritePosition(<indicator GetMousePos false)
+
+        if (GetMouseButtonDown(0))
+            false >targeting
+            GetMousePos >target
+            SetSpriteAlpha(<indicator 0.2)
+        endif
+    endif
+
+:Once
+    false >targeting
+    V2(-1 -1) dup >nullVector >target
+    -1 >shot
+
+    GetChild(self "gun") >gun
+    CreateSprite("/rts/units/bertha/indicator.png" V2(0.5 0.5)) >indicator
+    SetSpriteActive(<indicator false)
+
+    RegisterForMsg("MSG_FrameAdvance" "FrameAdvance")
+    RegisterForMsg("BerthaTarget" "SetTarget")
+    RegisterForMsg("BerthaClearTarget" "ClearTarget")
+
+:SetTarget
+    if (ListContains(GetSelectedUnits self 1 -) !) return endif
+
+    true >targeting
+    SetSpriteActive(<indicator true)
+    SetSpriteAlpha(<indicator 0.6)
+    SetSpriteScale(<indicator V2(<radius 16.0 / dup))
+
+:ClearTarget
+    if (ListContains(GetSelectedUnits self 1 -) !) return endif
+
+    false >targeting
+    <nullVector >target
+    SetSpriteActive(<indicator false)
+
+:Destroyed
+    DestroySprite(<indicator)
+    if (<shot -1 !=)
+        Destroy(<shot false)
+    endif

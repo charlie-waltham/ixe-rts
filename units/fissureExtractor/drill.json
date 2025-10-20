@@ -1,0 +1,6 @@
+{
+	"type": "part",
+	"position": [0, 0],
+	"pivot": [0.5, 0.5],
+    "anim": "drill_anim.png"
+}

@@ -1,0 +1,183 @@
+$unit_type:"/rts/units/shield/shield"
+
+:Upgrades
+    # 0
+    "name" "Increased Strength"
+    "tier" 1
+    "costOre" 200
+    "costRedon" 0
+    "costGreenar" 0
+    "costSpectrite" 0
+    "attribs" "strength|-|100"
+    "description" "+100 shield strength"
+    "position" V2(224 250)
+    "prerequisite" null
+    10 TableN
+
+    # 1
+    "name" "Increased Range"
+    "tier" 2
+    "costOre" 200
+    "costRedon" 50
+    "costGreenar" 200
+    "costSpectrite" 0
+    "attribs" "range|+|6"
+    "description" "+6 shield range"
+    "position" V2(176 330)
+    "prerequisite" 0
+    10 TableN
+
+    # 2
+    "name" "Increased Strength"
+    "tier" 2
+    "costOre" 300
+    "costRedon" 150
+    "costGreenar" 0
+    "costSpectrite" 0
+    "attribs" "strength|-|200 & cost|+|0.05" 
+    "description" "+200 shield strength<br><color=#f33>+20% energy consumption<color=#fff>"
+    "position" V2(272 330)
+    "prerequisite" 0
+    10 TableN
+
+    # 3
+    "name" "Additional Shield"
+    "tier" 3
+    "costOre" 500
+    "costRedon" 100
+    "costGreenar" 0
+    "costSpectrite" 0
+    "attribs" "max_units|+|1"
+    "description" "+1 max Shields"
+    "position" V2(176 410)
+    "prerequisite" 1
+    10 TableN
+
+    # 4
+    "name" "Overcharged Shields"
+    "tier" 3
+    "costOre" 200
+    "costRedon" 300
+    "costGreenar" 0
+    "costSpectrite" 25
+    "attribs" "strength|-|300 & cost|+|0.125"
+    "description" "+300 shield strength<br><color=#f33>+50% energy consumption<color=#fff>"
+    "position" V2(272 410)
+    "prerequisite" 2
+    10 TableN
+
+    # 5
+    "name" "Range Modulation"
+    "tier" 4
+    "costOre" 500
+    "costRedon" 0
+    "costGreenar" 400
+    "costSpectrite" 100
+    "attribs" "range|+|10"
+    "description" "+10 shield range"
+    "position" V2(176 490)
+    "prerequisite" 3
+    10 TableN
+
+    # 6
+    "name" "Additional Shield"
+    "tier" 4
+    "costOre" 650
+    "costRedon" 100
+    "costGreenar" 100
+    "costSpectrite" 150
+    "attribs" "max_units|+|1"
+    "description" "+1 max Shields"
+    "position" V2(272 490)
+    "prerequisite" 4
+    10 TableN
+
+    # 7
+    "name" "Shield Mastery"
+    "tier" 5
+    "costOre" 1000
+    "costRedon" 300
+    "costGreenar" 200
+    "costSpectrite" 300
+    "attribs" "acpass|=|1 & strength|-|400 & cost|+|0.2"
+    "description" "<color=#FFD166>Anticreeper can pass through shields<color=#fff><br>+400 shield strength<br><color=#f33>+80% energy consumption<color=#fff>"
+    "position" V2(224 570)
+    "prerequisite" 5 6 2 ListN
+    10 TableN
+
+    List
+
+:DefaultAttributes
+    # @DefaultAttributes >attribs
+    # Returns a table of attributes and their default values.
+
+    "max_units" 2 # Required on all factories
+    "strength" -200
+    "range" 31
+    "cost" 0.25
+    "acpass" 0
+    Table
+
+:ApplyAttributes
+    # @ApplyAttributes
+    # Apply attributes to all units.
+    # _DATA = {"units": list, "attribs": table}
+
+    <_DATA{"units"} >units
+    <_DATA{"attribs"} >attribs
+
+    # Singular attribs
+    if (TableContainsKey(<attribs "max_units"))
+        <attribs{"max_units"} @Set("max_units")
+    endif
+
+    # Per-unit attribs
+    GetTableKeys(<attribs) >keys
+    <keys 0 do
+        <keys[i] >attrib
+        <units 0 do
+            switch
+                case (<attrib "strength" ==)
+                    SetScript1Var(<units[i] "strength" <attribs{<attrib})
+                endcase
+                case (<attrib "range" ==)
+                    SetScript1Var(<units[i] "range" <attribs{<attrib})
+                endcase
+                case (<attrib "cost" ==)
+                    SetScript1Var(<units[i] "ammo_per_delay" <attribs{<attrib})
+                endcase
+                case (<attrib "acpass" ==)
+                    SetControllerArg(<units[i] "fieldcontroller" "affectac" <attribs{<attrib} asint !)
+                endcase
+            endswitch
+        loop
+    loop
+
+:PredictDPS
+    # @PredictDPS
+    # Return a predicted DPS for the given attribs.
+    # <_DATA is a table of attribs like @DefaultAttributes.
+
+    0 @Set("dps")
+
+# IGNORE BELOW
+
+:Once
+    @Upgrades          @Set("upgrades")
+    @DefaultAttributes @Set("attribs")
+    <unit_type         @Set("unit_type")
+
+    RegisterForMsg("ApplyAttributes"      self 1 - Concat "ApplyAttributes")
+    RegisterForMsg("PredictDPS"           self 1 - Concat "PredictDPS")
+    RegisterForMsg("SetDefaultAttributes" self 1 - Concat "SetDefaultAttributes")
+
+:SetDefaultAttributes
+    @DefaultAttributes @Set("attribs")
+
+:Get
+    >var
+    GetScriptVar(self "/rts/factories/factory.irpl" <var)
+
+:Set
+    >var >val
+    SetScriptVar(self "/rts/factories/factory.irpl" <var <val)

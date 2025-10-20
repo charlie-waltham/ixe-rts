@@ -15,7 +15,7 @@
 			{ "type":"text", "pos": [4,30], "text": "ON" },
 			{ "type":"toggle", "pos": [32,30], "name":"extractorEnable", "tooltip": "ON/OFF" },
 			{ "type":"text", "pos": [66,30], "text": "BOOST" },
-			{ "type":"toggle", "pos": [135,30], "name":"extractorBoost", "tooltip": "X2 Extraction Rate<br>X2 Consumption / Resource" }
+			{ "type":"toggle", "pos": [135,30], "name":"extractorBoost", "events": ["ExtractorConfig"], "tooltip": "X2 Extraction Rate<br>X1.5 Consumption / Resource" }
 		]
 	}
 }

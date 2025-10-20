@@ -1,0 +1,31 @@
+{
+	"type": "part",
+	"position": [0, 0],
+	"pivot": [0.5, 0.5],
+    "image": "gun.png",
+	"rotatewhenflipped": false,
+	"configui": {
+		"title": {
+			"name": "bertha_title",
+			"text": "Bertha",
+			"textalignment": "Center",
+			"bgcolor": "#CFB161FF",
+			"tooltip": "Bertha"
+		},
+		"width": 400,
+		"Components": [
+			{
+				"type":"button", "pos": [80,26], "name":"bertha_target", "text": "Set Target", "width": 140, "ignorename":true, "events": ["#SETTARGET", "BerthaTarget"]
+			},
+			{
+				"type":"button", "pos": [230,26], "name":"bertha_cleartarget", "text": "Clear Target", "width": 160, "events": ["BerthaClearTarget"]
+			},
+			{
+				"type":"text", "pos": [4, 0], "text": "FIRE MODE"
+			},
+			{
+				"type":"choiceButton", "pos": [120,0], "name":"bertha_firemode", "choices": ["Hold", "Once", "Auto"], "width": 80
+			}
+		]
+	}
+}

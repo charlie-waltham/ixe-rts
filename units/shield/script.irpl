@@ -1,0 +1,44 @@
+$strength:-200
+$range:31
+$delay:15
+$ammo_per_delay:0.25
+
+SetSpriteRotation(<sprite GetGameUpdateCount 10.0 / false)
+
+if (GetOnBoardComplete(self 5 true))
+    if (GetUnitUpdateCount(self) <delay % neq0) return endif
+
+    if (GetAmmo(self) <ammo_per_delay >=)
+        ConsumeAmmo(self <ammo_per_delay)
+
+        SetShowRange(self <range)
+        SetSpriteActive(<sprite true)
+        SetSpritePosition(<sprite GetPosition(self) false)
+        SetSpriteAlpha(<sprite @StrengthToAlpha)
+        SetSpriteScale(<sprite V2(<range 62.0 / dup))
+
+        SetControllerArg(self "fieldcontroller" "strength" <strength)
+        SetControllerArg(self "fieldcontroller" "range" <range)
+        SetControllerArg(self "fieldcontroller" "deploy" true)
+        return
+    endif
+endif
+
+SetSpriteActive(<sprite false)
+SetControllerArg(self "fieldcontroller" "deploy" false)
+
+:Once
+    CreateSprite("/rts/units/shield/shieldEffect.png" V2(0.5 0.5)) >sprite
+    SetSpritePosition(<sprite GetPosition(self) false)
+    SetSpriteAlpha(<sprite @StrengthToAlpha)
+    SetSpriteLayer(<sprite 0)
+    SetSpriteActive(<sprite false)
+
+    SetShowRange(self <range)
+    SetShowRangeColor(self V4(0.2 0.5 1 1))
+
+:Destroyed
+    DestroySprite(<sprite)
+
+:StrengthToAlpha
+    abs(<strength) ln 0.06 * clamp01

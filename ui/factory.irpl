@@ -14,7 +14,7 @@ if (GetListCount(<sprites) gt0)
     loop
 
     <destroyedSprites 0 do
-        RemoveListElement(<sprites <destroyedSprites[i])
+        RemoveListElement(<sprites i)
     loop
 endif
 
@@ -58,59 +58,71 @@ loop
     RegisterForMsg("ToggleFactoryUI" dup)
     RegisterForMsg("UpgradePreview" dup)
     RegisterForMsg("BuyUpgrade" dup)
+    RegisterForMsg("SellFactory" dup)
 
 :CreateFactoryUI
     DestroyUI("factory")
 
+    GetScriptVar(<unit "/rts/factories/factory.irpl" "attribs") Copy >attribs
+    @PredictDPS(<attribs null) >dps
+    10 >attribs{"depth"}
+    @PredictDPS(<attribs null) >dps10
+
     GetScriptVar(<unit "/rts/factories/factory.irpl" "ownedUpgrades") >ownedUpgrades
+    CreateList >prereqsOwnedList
+
     ""
     <upgrades 0 do
         <upgrades[i]{"position"} >pos
-        # Hiding unreachable upgrades is disabled for now
-        if (true)
-            if(ListContains(<ownedUpgrades <upgrades[i]{"prerequisite"}) !) "#333"
-            else if (ListContains(<ownedUpgrades i)) "#999"
-            else "#ccc"
-            endif endif >colour
 
-            <upgrades[i]{"name"} "<br>" Concat
-            <upgrades[i]{"description"} "<br>" Concat3
-            <upgrades[i]{"costOre"} "O " Concat3
-            <upgrades[i]{"costRedon"} "R " Concat3
-            <upgrades[i]{"costGreenar"} "G " Concat3
-            <upgrades[i]{"costSpectrite"} "S" Concat3
-            >tooltip
-
-            "{
-                'type': 'button',
-                'pos': [" <pos.x "," <pos.y "],
-                'width': 64, 'height': 64,
-                'name': '" i "',
-                'color': '#fff', 'bgcolor': '" <colour "',
-                'tooltip': '" <upgrades[i]{"name"} "',
-                'image': '/rts/images/tiers/" <upgrades[i]{"tier"} ".png',
-                'events': ['UpgradePreview'],
-                'tooltip': '" <tooltip "'
-            },"
+        if (<upgrades[i]{"prerequisite"} GetType "LIST" !=)
+            <upgrades[i]{"prerequisite"} 1 ListN
         else
-            "{
-                'type': 'button',
-                'pos': [" <pos.x "," <pos.y "],
-                'width': 64, 'height': 64,
-                'name': '" i "',
-                'color': '#fff', 'bgcolor': '#333',
-                'image': '/rts/images/icons/unknown.png'
-            },"
-        endif
+            <upgrades[i]{"prerequisite"}
+        endif >prereqs
+
+        true
+        <prereqs 0 do
+            ListContains(<ownedUpgrades <prereqs[i]) <prereqs[i] IsNull || &&
+        loop >prereqsOwned
+        AppendToList(<prereqsOwnedList <prereqsOwned)
+
+        switch
+            case (ListContains(<ownedUpgrades i)) "#999" endcase # Owned
+            case (<prereqsOwned)                  "#ccc" endcase # Purchasable
+            case (true)                           "#333" endcase # Unpurchasable
+        endswitch >colour
+
+        <upgrades[i]{"name"} "<br>" Concat
+        <upgrades[i]{"description"} "<br>" Concat3
+        <upgrades[i]{"costOre"} "O " Concat3
+        <upgrades[i]{"costRedon"} "R " Concat3
+        <upgrades[i]{"costGreenar"} "G " Concat3
+        <upgrades[i]{"costSpectrite"} "S" Concat3
+        >tooltip
+
+        "{
+            'type': 'button',
+            'pos': [" <pos.x "," <pos.y "],
+            'width': 64, 'height': 64,
+            'name': '" i "',
+            'bgcolor': '" <colour "',
+            'tooltip': '" <upgrades[i]{"name"} "',
+            'image': '/rts/images/tiers/" <upgrades[i]{"tier"} ".png',
+            'events': ['UpgradePreview'],
+            'tooltip': '" <tooltip "'
+        },"
     loop
     @ConcatAll >nodeJSON
 
     "{
-        'anchor': [0.5,0.5], 'pos': [0,0], 'pivot': [0.5,0.5], 'width': 512, 'height': 768, 'bgcolor': '#123B4F66', 'Components': [
-            { 'type': 'button', 'pos': [0,730], 'width': 512, 'height': 40, 'name': 'title', 'color': '#fff', 'bgcolor': '#0000', 'text': '" GetUnitProperty(<unit "displayname") "'},
-            { 'type': 'image', 'pos': [6,200], 'width': 500, 'height': 512, 'name': 'background', 'color': '#0005', 'bgcolor': '#0000', 'image': '/rts/images/square.png'},
-            { 'type': 'button', 'pos': [0,40], 'width': 512, 'height': 160, 'name': 'description', 'color': '#fff', 'bgcolor': '#0000', 'text': ''},
-            { 'type': 'button', 'pos': [192,5], 'width': 128, 'height': 30, 'name': 'buy', 'color': '#fff', 'bgcolor': '#0f0f', 'text': 'UPGRADE', 'events': ['BuyUpgrade'], 'active': false},
+        'anchor': [0.5,0.5], 'pos': [0,0], 'pivot': [0.5,0.5], 'width': 512, 'height': 768, 'bgcolor': '#123B4F99', 'Components': [
+            { 'type': 'button', 'pos': [0,728], 'width': 512, 'height': 24, 'name': 'title', 'color': '#fff', 'bgcolor': '#0000', 'text': '" GetUnitProperty(<unit "displayname") "'},
+            { 'type': 'image', 'pos': [6,200], 'width': 500, 'height': 512, 'name': 'background', 'image': '/rts/images/background.png'},
+            { 'type': 'button', 'pos': [0,60], 'width': 512, 'height': 160, 'name': 'description', 'color': '#fff', 'bgcolor': '#0000', 'text': ''},
+            { 'type': 'button', 'pos': [6,688], 'width': 100, 'height': 24, 'name': 'sellUpgrades', 'color': '#fff', 'bgcolor': '#811', 'text': '<size=50%>SELL UPGRADES', 'events': ['SellUpgrades" <unit "']},
+            { 'type': 'button', 'pos': [6,664], 'width': 100, 'height': 24, 'name': 'sellFactory', 'color': '#fff', 'bgcolor': '#811', 'text': '<size=50%>SELL FACTORY', 'events': ['SellFactory']},
+            { 'type': 'button', 'pos': [128,5], 'width': 256, 'height': 40, 'name': 'buy', 'color': '#fff', 'bgcolor': '#0f0f', 'text': 'UPGRADE', 'events': ['BuyUpgrade'], 'active': false},
             { 'type': 'image', 'pos': [90,50], 'width': 24, 'height': 24, 'name': 'oreIcon', 'color': '#fff', 'bgcolor': '#000', 'image': '/rts/images/icons/ore.png', 'tooltip': 'Ore', 'active': false},
             { 'type': 'text', 'pos': [120,50], 'width': 120, 'height': 24, 'name': 'ore', 'color': '#fff', 'bgcolor': '#123B4F00', 'text': '0', 'active': false},
             { 'type': 'image', 'pos': [180,50], 'width': 24, 'height': 24, 'name': 'redonIcon', 'color': '#fff', 'bgcolor': '#000', 'image': '/rts/images/icons/redon.png', 'tooltip': 'Redon', 'active': false},
@@ -119,9 +131,10 @@ loop
             { 'type': 'text', 'pos': [300,50], 'width': 120, 'height': 24, 'name': 'greenar', 'color': '#fff', 'bgcolor': '#123B4F00', 'text': '0', 'active': false},
             { 'type': 'image', 'pos': [360,50], 'width': 24, 'height': 24, 'name': 'spectriteIcon', 'color': '#fff', 'bgcolor': '#000', 'image': '/rts/images/icons/spectrite.png', 'tooltip': 'Spectrite', 'active': false},
             { 'type': 'text', 'pos': [390,50], 'width': 120, 'height': 24, 'name': 'spectrite', 'color': '#fff', 'bgcolor': '#123B4F00', 'text': '0', 'active': false},
+            { 'type': 'text', 'pos': [8,186], 'width': 120, 'height': 48, 'name': 'dps', 'color': '#fff', 'text': 'DPS (Depth 10) " <dps10 "<br>DPS (Max) " <dps "'},
             " <nodeJSON "
         ]
-    }" Concat4 Concat >json
+    }" @ConcatAll >json
 
     CreateTable >uiData
     CreateUI("factory" <json <uiData) pop pop
@@ -129,7 +142,7 @@ loop
 :CloseFactoryUI
     DestroyUI("factory")
 
-    WriteConfig(GetChildren(<unit)[0] "toggleFactory" "OPEN")
+    WriteConfig(GetChildren(<unit)[0] "toggleFactory" 0)
     <sprites 0 do
         DestroySprite(<sprites[i])
     loop
@@ -163,10 +176,36 @@ loop
     "<color=" <spectriteColour ">" <upgrade{"costSpectrite"} @Fmt Concat4 >uiData{"spectrite"}
 
     SetUIText("factory" "description" <text)
-    if (ListContains(<ownedUpgrades <upgradeId) ListContains(<ownedUpgrades <upgrade{"prerequisite"}) ! ||)
+
+    if (ListContains(<ownedUpgrades <upgradeId) <prereqsOwnedList[<upgradeId] ! ||)
         SetUIActive("factory" "buy" false)
     else
         SetUIActive("factory" "buy" true)
+    endif
+
+    # DPS preview
+    RemoveTableElement(<attribs "depth")
+    if (ListContains(<ownedUpgrades <upgradeId))
+        @PredictDPS(<attribs null) >dps
+        10 >attribs{"depth"}
+        @PredictDPS(<attribs null) >dps10
+
+        "DPS (Depth 10) " <dps10 "<br>DPS (Max) " <dps
+        @ConcatAll >uiData{"dps"}
+    else
+        <attribs Copy >attribsPreview
+        @PredictDPS(<attribsPreview <upgrade) >dpsPreview
+        10 >attribs{"depth"}
+        @PredictDPS(<attribs <upgrade) >dps10Preview
+
+        <dpsPreview <dps - >dpsDiff
+        if (<dpsDiff gte0) "+" <dpsDiff Concat >dpsDiff endif
+        <dps10Preview <dps10 - >dps10Diff
+        if (<dps10Diff gte0) "+" <dps10Diff Concat >dps10Diff endif
+
+        "DPS (Depth 10) " <dps10 "<color=" @ColourCodeEq(<dps10Preview <dps10) "> " <dps10Diff " (" <dps10Preview ")"
+        "<color=#fff><br>DPS (Max) " <dps "<color=" @ColourCodeEq(<dpsPreview <dps) "> " <dpsDiff " (" <dpsPreview ")"
+        @ConcatAll >uiData{"dps"}
     endif
 
 :BuyUpgrade
@@ -189,6 +228,25 @@ loop
         PlaySound("UIClickError" 1)
     endif
 
+:SellFactory
+    GetName(<unit) >unitName
+
+    Destroy(<unit false)
+    RemovePlanFromInventory(<unitName 1 true)
+    @ToggleFactoryUI
+
+    # Refund factory cost
+    GetTableKeys(<-*rts_buildOptions) >buildKeys
+    <buildKeys 0 do
+        <-*rts_buildOptions{<buildKeys[i]} >buildOption
+        if (<buildOption{"ship"} <unitName ==)
+            <-*rts_materials{31} <buildOption{"costOre"} + ->*rts_materials{31}
+            <-*rts_materials{32} <buildOption{"costRedon"} + ->*rts_materials{32}
+            <-*rts_materials{33} <buildOption{"costGreenar"} + ->*rts_materials{33}
+            <-*rts_materials{34} <buildOption{"costSpectrite"} + ->*rts_materials{34}
+        endif
+    loop
+
 :ConcatAll
     StackSize 1 do
         Concat
@@ -209,3 +267,56 @@ loop
     if (<b eq0) "#fff" return endif
     if (<a <b >=) "#5f5" return endif
     "#f33"
+
+:ColourCodeEq
+    # @ColourCode(<a <b) >colour
+    >b >a
+
+    if (<a <b ==) "#fff" return endif
+    if (<a <b >) "#5f5" return endif
+    "#f33"
+
+:PredictDPS
+    # @PredictDPS(<attribs <upgrade) >dps
+    >upg >attr
+
+    if (<upg IsNull !)
+        @DecodeAttribs(<upg{"attribs"}) >attr
+    endif
+    SendMsg("PredictDPS" <unit Concat <attr)
+    GetScriptVar(<unit "/rts/factories/factory.irpl" "dps") 0 round
+
+# Copied from factory.irpl
+:DecodeAttribs
+    # @DecodeAttribs(<attribString)
+    >attribString
+
+    Split(<attribString "&") >attribStrs
+    <attribs Copy >attribsCopy
+
+    <attribStrs 0 do
+        RemoveWhiteSpace(<attribStrs[i]) >attribStr
+        Split(<attribStr "|") >components
+        if (GetListCount(<components) 3 ==)
+            if (TableContainsKey(<attribsCopy <components[0]) !) 0 >attribsCopy{<components[0]} endif
+
+            <attribsCopy{<components[0]}
+            <components[2] asfloat
+
+            <components[1] >action
+            switch
+                case (<action "+" ==) + endcase
+                case (<action "-" ==) - endcase
+                case (<action "*" ==) * endcase
+                case (<action "/" ==) / endcase
+                case (<action "=" ==) swap pop endcase
+                case (true) PrintAllSp(GetName(<unit) "Invalid attrib operator:" <attribStr) endcase
+            endswitch
+
+            >attribsCopy{<components[0]}
+        else
+            PrintAllSp("Invalid attrib string:" <attribStr)
+        endif
+    loop
+
+    <attribsCopy

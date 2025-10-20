@@ -1,0 +1,20 @@
+{
+	"type": "unit",
+	"displayname": "Bertha",
+	"permanentinventory": true,
+	"image": "body.png",
+	"position": [0, 0],
+	"pivot": [0.5, 0.5],
+	"movable": true,
+	"maxammo": 200,
+	"ammorequestdelay": 6,
+	"controllers": 	[
+		{"name": "ondestroy_sandexplosion"}
+	],
+	"parts": [
+		{"part": "gun.json", "name": "gun"}
+	],
+	"scripts": [
+		{"name": "script.irpl"}
+	]
+}

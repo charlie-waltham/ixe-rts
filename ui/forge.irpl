@@ -53,7 +53,7 @@
     @ConcatAll >optionsJSON
 
     "{
-        'anchor': [0,0.5], 'pos': [0,0], 'pivot': [0,0.5], 'width': 512, 'height': 768, 'bgcolor': '#123B4F66', 'Components': [
+        'anchor': [0,0.5], 'pos': [0,0], 'pivot': [0,0.5], 'width': 512, 'height': 768, 'bgcolor': '#123B4F99', 'Components': [
             { 'type': 'button', 'pos': [0,720], 'width': 512, 'height': 48, 'name': 'title', 'color': '#fff', 'bgcolor': '#0000', 'text': '<size=200%>FORGE'},
         " <optionsJSON "
         ]

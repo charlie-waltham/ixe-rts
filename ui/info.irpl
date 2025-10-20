@@ -22,6 +22,10 @@
 
     "spectrite" >uiData{"help"}
 
+    if (GetMappedKeyDown("Custom0" false))
+        SendMsg("ToggleBuildUI" null)
+    endif
+
 :FormatAmount
     # @FormatAmount(<amt)
     # Formats a number such that values >=1000 are converted to K values.
