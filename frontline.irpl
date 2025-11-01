@@ -1,36 +1,44 @@
 $CREEPER_CHUNK_SIZE:8
 $FRONTLINE_SIZE:8
-$DELAY:5
 $BEACON_RANGE:32
 
-if (GetTimer0 eq0)
-    @FindFrontlines
-    if (GetTimer1 eq0) <DELAY else 0 endif SetTimer0
+if (GetPause) return endif
+ElapsedTime >start
+@FindFrontlines
+ElapsedTime <start - <time + >time
+
+return
+if (GetGameUpdateCount 30 % eq0)
+    <avgTime <time + >avgTime
+    <avgCount 1 + >avgCount
+
+    PrintAllSp("Time:" <time "ms<br>Avg:" <avgTime <avgCount / "ms")
+    0 >time
 endif
 
 :Once
     <CREEPER_CHUNK_SIZE ->*CREEPER_CHUNK_SIZE
-    <CREEPER_CHUNK_SIZE dup * >sqrChunkSize
+    <CREEPER_CHUNK_SIZE dup * 2 / >maxSandInChunk
+    <BEACON_RANGE dup * >sqrBeaconRange
     512 <CREEPER_CHUNK_SIZE / >numChunks
     0 >currentRow
-    <BEACON_RANGE dup * >sqrBeaconRange
+    V2(-1 -1) >nullVector
     <FRONTLINE_SIZE 0 do CreateList loop List ->*frontlineCells
     false >debugFrontline
-    
-    V4(
-        -1 <CREEPER_CHUNK_SIZE * dup
-        <CREEPER_CHUNK_SIZE dup
-    ) >areaScaler
+
+    0 >time
+    0 >avgTime
+    0 >avgCount
 
     256 0 do
         if (GetSandDefData(i){"blocksUnits"}) i endif
     loop
-    List >blockingSands
+    List 11 20 >blockingSands
 
     GetUnitsByName("/rts/dummy") >dummies
     <dummies 0 do Destroy(<dummies[i] false) loop
 
-    Magnitude(V2(<CREEPER_CHUNK_SIZE <FRONTLINE_SIZE * dup)) >losRange
+    <FRONTLINE_SIZE <CREEPER_CHUNK_SIZE * >losRange
     <numChunks 0 do
         V2(0 i <CREEPER_CHUNK_SIZE *) <CREEPER_CHUNK_SIZE 2 / + >unitPos
         CreateUnit("/rts/dummy" <unitPos true) >unit
@@ -40,11 +48,8 @@ endif
     loop
     List >losUnits
 
-    RegisterForMsg("ResetShips" dup)
     RegisterForMsg("DebugFrontline" dup)
     
-    SetTimer0(<DELAY)
-    SetTimerObeyPause0(true)
     @GameLoaded
 
 :GameLoaded
@@ -71,7 +76,7 @@ endif
     List >beaconPositions
 
     <numChunks 0 do
-        V2(<currentRow 1 + i) <CREEPER_CHUNK_SIZE * >chunkPos
+        V2(<currentRow i) <CREEPER_CHUNK_SIZE * <CREEPER_CHUNK_SIZE 2 / + >chunkPos
 
         false >inBeaconRange
         <beaconPositions 0 do
@@ -85,9 +90,13 @@ endif
         false >los
         if (<inBeaconRange !)
             GetNearestCreeper(<losUnits[i] false) >nearestCreeper
-            GetLos(<losUnits[i] <nearestCreeper.x <nearestCreeper.y) >los
+            if (<nearestCreeper <nullVector !=)
+                GetLos(<losUnits[i] <nearestCreeper.x <nearestCreeper.y) >los
+            else
+                false >los
+            endif
             # Update position of los dummy now as position takes a frame to update
-            SetPosition(<losUnits[i] <chunkPos <CREEPER_CHUNK_SIZE 2 / +)
+            SetPosition(<losUnits[i] <chunkPos V2(<CREEPER_CHUNK_SIZE 0) +)
         endif
 
         if (<los <inBeaconRange ||)
@@ -99,20 +108,15 @@ endif
             
             # Check if this cell is a valid frontline, and return a value for its distance from the creeper
             0 >distance
-            if (GetSandInArea(<area false <blockingSands true) GetListCount <sqrChunkSize lt # Cell is not 100% sand
+            if (GetSandInArea(<area false <blockingSands true) GetListCount <maxSandInChunk lt # Cell <50% sand
                 GetCreeperInArea(<area false false) eq0 &&) # Creeper in cell is 0
 
                 # Set distance to 1 if in range of beacon
                 if (<inBeaconRange)
                     1 >distance
                 else
-                    <FRONTLINE_SIZE 1 + 1 do
-                        # Creeper in cells around this cell is not 0
-                        if (GetCreeperInArea(<area <areaScaler i * + false false) gt0)
-                            i >distance
-                            break
-                        endif
-                    loop
+                    # IRPL execution is slow enough that sqrt is faster than creating a lookup table / array
+                    Magnitude(<chunkPos <nearestCreeper - <CREEPER_CHUNK_SIZE /) asint 1 + >distance
                 endif
             endif
 
@@ -141,10 +145,6 @@ endif
 
     # Increment row or loop back to 0
     <currentRow 1 + <numChunks mod >currentRow
-
-:ResetShips
-    SetTimer0(0)
-    SetTimer1(<numChunks)
 
 :DebugSprite
     # @DebugSprite(<image <origin <position <scale <color) >sprite

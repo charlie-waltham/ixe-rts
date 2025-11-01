@@ -30,12 +30,23 @@ if (GetTimer0 eq0)
         endonce
     endif
 
+    ElapsedTime >start
     @MoveUnits
+    ElapsedTime <start - <time + >time
+
     SetTimer0(<MAX_DELAY GetListCount(<units) 0.1 * - 1 max)
 endif
 
 if (GetTimer1 eq0)
     false >reset
+endif
+
+if (GetGameUpdateCount 30 % eq0)
+    <avgTime <time + >avgTime
+    <avgCount 1 + >avgCount
+
+    PrintAllSp("Time:" <time "ms<br>Avg:" <avgTime <avgCount / "ms")
+    0 >time
 endif
 
 :Once
@@ -52,15 +63,19 @@ endif
     "$/apexabraxis/apexabraxis" "scale" V2(44 16) 1 TableN # Not the same as normal apex but close enough
     "/rts/units/apex/apex" "scale" V2(44 20) 1 TableN
     "$/digger/digger" "scale" V2(12 12) 1 TableN
-    "$/reactor/reactor" "scale" V2(10, 10) 1 TableN
-    "$/duster/duster" "scale" V2(12, 10) 1 TableN
-    "$/oreminer/oreminer" "scale" V2(8, 8) 1 TableN
+    "$/reactor/reactor" "scale" V2(10 10) 1 TableN
+    "$/duster/duster" "scale" V2(12 10) 1 TableN
+    "$/oreminer/oreminer" "scale" V2(8 8) 1 TableN
     "$/nullifier/nullifier" "scale" V2(12 12) 1 TableN
     "/rts/units/excavator/excavator" "scale" V2(12 12) 1 TableN
     "$/coilship/coilship" "scale" V2(18 12) 1 TableN
     "$/ixecore/ixecore" "scale" V2(12 12) 1 TableN
     "$/spiritship/spiritship" "scale" V2(32 24) 1 TableN
     "$/portal/portal" "scale" V2(8 8) 1 TableN
+    "/rts/units/fissure/fissure" "scale" V2(11 5) 1 TableN
+    "/rts/units/fissureExtractor/fissureExtractor" "scale" V2(10 12) 1 TableN
+    "/rts/units/bertha/bertha" "scale" V2(20 20) 1 TableN
+    "/rts/units/beacon/beacon" "scale" V2(8 8) 1 TableN
     Table >shipData
 
     # To be used when the amount of collected upgrade gems is above a threshold (increased range)
@@ -83,6 +98,10 @@ endif
         if (GetSandDefData(i){"blocksUnits"}) i endif
     loop
     List >blockingSands
+
+    0 >time
+    0 >avgTime
+    0 >avgCount
 
     false >invalidPath
     false >reset
@@ -165,31 +184,33 @@ endif
     <ship{"maxDistance"} 1 + 0 do
         <-*frontlineCells[i] >currentFrontline
 
-        <ATTEMPTS_PER_DIST 0 do
-            RandInt(0 GetListCount(<currentFrontline)) >cellId
-            RandInt(0 <-*CREEPER_CHUNK_SIZE) RandInt(0 <-*CREEPER_CHUNK_SIZE) V2 >innerPos
-            <currentFrontline[<cellId] <innerPos + >newPos
+        if (GetListCount(<currentFrontline) neq0)
+            <ATTEMPTS_PER_DIST 0 do
+                RandInt(0 GetListCount(<currentFrontline)) >cellId
+                RandInt(0 <-*CREEPER_CHUNK_SIZE) RandInt(0 <-*CREEPER_CHUNK_SIZE) V2 >innerPos
+                <currentFrontline[<cellId] <innerPos + >newPos
 
-            if (@IsValidPosition(<newPos <ship <unit))
-                MoveUnit(<unit <newPos)
-                true >locationFound
+                if (@IsValidPosition(<newPos <ship <unit))
+                    MoveUnit(<unit <newPos)
+                    true >locationFound
+                    break
+                endif
+
+                if (<debugPlacements)
+                    @GetRectVertices(<newPos <ship{"scale"}) >rect
+                    @DebugSprite("/rts/images/square.png"
+                        Vector0
+                        <rect
+                        <ship{"scale"} 2 *
+                        V4(1 0 0 0.5)
+                    ) >sprite
+                    AppendToList(<sprites <sprite)
+                endif
+            loop
+
+            if (<locationFound)
                 break
             endif
-
-            if (<debugPlacements)
-                @GetRectVertices(<newPos <ship{"scale"}) >rect
-                @DebugSprite("/rts/images/square.png"
-                    Vector0
-                    <rect
-                    <ship{"scale"} 2 *
-                    V4(1 0 0 0.5)
-                ) >sprite
-                AppendToList(<sprites <sprite)
-            endif
-        loop
-
-        if (<locationFound)
-            break
         endif
     loop
 
@@ -204,14 +225,6 @@ endif
     >thisUnit
 
     GetPosition(<thisUnit) >pos
-
-    #GetRaPath(GetApex <pos) >path
-    #<path 0 do
-    #    <path[i] >pathPos
-    #    if (GetCreeper(<pathPos.x <pathPos.y) gt0)
-    #        false return
-    #    endif
-    #loop
 
     if (GetCreeper(<pos.x <pos.y) gt0) true return endif
 
@@ -236,9 +249,6 @@ endif
     # Is valid path to apex
     GetRaPath(GetApex <pos) >path
     if (GetListCount(<path) eq0) false return endif
-
-    # Alternative to RA system, but has worse performance when needed (16ms vs 1ms)
-    #if (IsPassable(GetPosition(GetApex) <pos V4(0 0 512 512) false) !) false return endif
 
     # Path does not intersect with creeper
     <path 0 do
@@ -272,6 +282,9 @@ endif
     # Area is clear of blocking sands
     GetSandInArea(<newRect false <blockingSands true) GetListCount >sandCount
     if (<sandCount neq0) false return endif
+
+    # Alternative to GetRaPath, but has much worse performance per check (16ms vs <1ms)
+    #if (IsPassable(GetPosition(GetApex) <pos V4(0 0 512 512) false) !) false return endif
 
     true return
 
